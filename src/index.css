@@ -1,0 +1,137 @@
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Public Sans', ui-sans-serif, system-ui, sans-serif;
+
+  /* Neutrals */
+  --color-canvas: #faf9f5;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f2f0e9;
+  --color-line: #e2dfd5;
+  /* Darkened from the original #c8c3b4 spec so input borders and other
+     interface boundaries clear the 3:1 non-text contrast minimum against
+     white (documented in the README). */
+  --color-line-strong: #9c927a;
+  --color-ink: #1a1a17;
+  --color-ink-body: #42423c;
+  --color-ink-muted: #6b6b61;
+
+  /* Medical portal */
+  --color-medical: #0f766e;
+  --color-medical-deep: #0a5750;
+  --color-medical-tint: #e4f0ee;
+
+  /* Wellbeing portal */
+  --color-wellbeing: #3f7b52;
+  --color-wellbeing-deep: #2e5c3d;
+  --color-wellbeing-tint: #e7f0e8;
+
+  /* Safeguarding portal */
+  --color-safeguarding: #33447e;
+  --color-safeguarding-deep: #25325f;
+  --color-safeguarding-tint: #e7eaf4;
+
+  /* Semantic */
+  --color-urgent: #a32a2a;
+  --color-urgent-tint: #f6e7e7;
+  --color-caution: #a66300;
+  --color-caution-tint: #f7edda;
+  /* Darker text-on-tint variant for small badge text, where the base
+     caution/steady hues fall just under 4.5:1 on their own tint. */
+  --color-caution-deep: #8a5200;
+  --color-steady: #2f7d4f;
+  --color-steady-tint: #e5f0e9;
+  --color-steady-deep: #256640;
+  --color-info: #2c5e8a;
+  --color-info-tint: #e5edf3;
+
+  --radius-input: 8px;
+  --radius-card: 12px;
+  --radius-modal: 16px;
+
+  --spacing-4: 4px;
+  --spacing-8: 8px;
+  --spacing-12: 12px;
+  --spacing-16: 16px;
+  --spacing-24: 24px;
+  --spacing-32: 32px;
+  --spacing-48: 48px;
+  --spacing-64: 64px;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-canvas);
+    color: var(--color-ink-body);
+    font-family: var(--font-sans);
+    font-feature-settings: 'tnum' 1, 'lnum' 1;
+    font-variant-numeric: tabular-nums lining-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .focus-ring-medical:focus-visible {
+    outline-color: var(--color-medical);
+  }
+  .focus-ring-wellbeing:focus-visible {
+    outline-color: var(--color-wellbeing);
+  }
+  .focus-ring-safeguarding:focus-visible {
+    outline-color: var(--color-safeguarding);
+  }
+}
+
+/* Skip link */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--color-ink);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 0 0 8px 0;
+}
+.skip-link:focus {
+  left: 0;
+}
