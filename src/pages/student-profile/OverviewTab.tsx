@@ -1,9 +1,10 @@
 import { format, differenceInYears } from 'date-fns';
+import { Lock } from 'lucide-react';
 import type { Student, Flag } from '@/lib/types';
 import { Card, CardTitle } from '@/components/ui/Card';
 import { SeverityDot } from '@/components/ui/Badge';
 
-export function OverviewTab({ student, flags }: { student: Student; flags: Flag[] }) {
+export function OverviewTab({ student, flags, guidanceRestricted }: { student: Student; flags: Flag[]; guidanceRestricted?: boolean }) {
   const age = differenceInYears(new Date(), new Date(student.dateOfBirth));
   const latestAttendance = student.attendanceByWeek?.at(-1);
 
@@ -12,7 +13,12 @@ export function OverviewTab({ student, flags }: { student: Student; flags: Flag[
       <div className="flex flex-col gap-4 lg:col-span-2">
         <Card className="p-5">
           <CardTitle>What staff need to know</CardTitle>
-          {flags.length === 0 ? (
+          {guidanceRestricted ? (
+            <p className="mt-2 flex items-center gap-1.5 text-[15px] text-ink-muted">
+              <Lock size={14} aria-hidden />
+              This student is outside your class. Switch on duty mode to see guidance for any student.
+            </p>
+          ) : flags.length === 0 ? (
             <p className="mt-2 text-[15px] text-ink-muted">Nothing flagged for this student right now.</p>
           ) : (
             <ul className="mt-3 flex flex-col gap-3">

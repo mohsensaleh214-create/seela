@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ClipboardList, ShieldAlert } from 'lucide-react';
+import { ClipboardList, ShieldAlert, Trophy } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { studentName } from '@/lib/selectors';
 import { SCHOOL_TIERS, classesBySchool, type SchoolTier } from '@/lib/school';
@@ -10,6 +10,8 @@ import { PageHeader } from '@/components/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { PersonAvatar } from '@/components/ui/PersonAvatar';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Modal } from '@/components/ui/Modal';
+import { HousePointsAwardPanel } from '@/components/HousePointsAwardPanel';
 
 const STATUS_OPTIONS: { value: AttendanceStatus; label: string; on: string }[] = [
   { value: 'present', label: 'Present', on: 'bg-steady text-white' },
@@ -24,6 +26,7 @@ export function Registration() {
 
   const [school, setSchool] = useState<SchoolTier | ''>('');
   const [tutorGroup, setTutorGroup] = useState('');
+  const [awardingId, setAwardingId] = useState<string | null>(null);
 
   const classMap = useMemo(() => classesBySchool(state.students), [state.students]);
   const classOptions = school ? (classMap.get(school) ?? []) : [];
@@ -121,6 +124,15 @@ export function Registration() {
                       </button>
                     ))}
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setAwardingId(s.id)}
+                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-[8px] border border-line-strong px-2.5 py-1.5 text-[12px] font-medium text-ink-body hover:bg-surface-sunken"
+                    title={`Give ${studentName(s)} house points`}
+                  >
+                    <Trophy size={13} aria-hidden />
+                    Points
+                  </button>
                   <Link
                     to={`/raise-concern?student=${s.id}`}
                     className="inline-flex min-h-[36px] items-center gap-1.5 rounded-[8px] border border-line-strong px-2.5 py-1.5 text-[12px] font-medium text-ink-body hover:bg-surface-sunken"
@@ -135,6 +147,10 @@ export function Registration() {
           })}
         </div>
       )}
+
+      <Modal open={!!awardingId} onClose={() => setAwardingId(null)} title="Give house points" size="sm">
+        {awardingId && <HousePointsAwardPanel studentId={awardingId} onAwarded={() => setAwardingId(null)} />}
+      </Modal>
     </>
   );
 }

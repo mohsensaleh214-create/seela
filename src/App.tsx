@@ -6,6 +6,7 @@ import { Today } from '@/pages/Today';
 import { StudentProfile } from '@/pages/StudentProfile';
 import { RaiseConcern } from '@/pages/RaiseConcern';
 import { Registration } from '@/pages/Registration';
+import { HousePoints } from '@/pages/HousePoints';
 import { MedicalDaily } from '@/portals/medical/MedicalDaily';
 import { HealthcarePlans } from '@/portals/medical/HealthcarePlans';
 import { AllergiesMedication } from '@/portals/medical/AllergiesMedication';
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/" element={<Today />} />
         <Route path="/raise-concern" element={<RaiseConcern />} />
         <Route path="/registration" element={<Registration />} />
+        <Route path="/house-points" element={<HousePoints />} />
         <Route path="/students/:studentId" element={<StudentProfile />} />
 
         <Route path="/medical" element={<MedicalDaily />} />

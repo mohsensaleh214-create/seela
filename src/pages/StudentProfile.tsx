@@ -3,7 +3,7 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { studentName } from '@/lib/selectors';
-import { canReadCase } from '@/lib/selectors';
+import { canReadCase, canSeeStudentGuidance } from '@/lib/selectors';
 import { buildStudentTimeline } from '@/lib/timeline';
 import { PersonAvatar } from '@/components/ui/PersonAvatar';
 import { SeverityDot } from '@/components/ui/Badge';
@@ -36,9 +36,14 @@ export function StudentProfile() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [student?.id, currentUser.id]);
 
+  const canSeeGuidance = student ? canSeeStudentGuidance(permissions, student, currentUser, state.dutyMode) : false;
+
   const visibleFlags = useMemo(
-    () => (student ? state.flags.filter((f) => student.flagIds.includes(f.id) && f.visibleToRoles.includes(currentUser.role)) : []),
-    [student, state.flags, currentUser.role],
+    () =>
+      student && canSeeGuidance
+        ? state.flags.filter((f) => student.flagIds.includes(f.id) && f.visibleToRoles.includes(currentUser.role))
+        : [],
+    [student, canSeeGuidance, state.flags, currentUser.role],
   );
 
   const studentCases = useMemo(() => (student ? state.cases.filter((c) => c.studentId === student.id) : []), [student, state.cases]);
@@ -112,7 +117,7 @@ export function StudentProfile() {
       <Tabs items={tabs} active={activeTab} onChange={setTab} />
 
       <div>
-        {activeTab === 'overview' && <OverviewTab student={student} flags={visibleFlags} />}
+        {activeTab === 'overview' && <OverviewTab student={student} flags={visibleFlags} guidanceRestricted={!canSeeGuidance} />}
         {activeTab === 'timeline' && (
           <TimelineTab
             items={timelineItems}

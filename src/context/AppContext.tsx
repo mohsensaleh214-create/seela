@@ -12,6 +12,7 @@ import {
   AUDIT_EVENTS,
   ACTIVITIES,
   PATTERN_FLAGS,
+  HOUSE_POINT_AWARDS,
 } from '@/lib/fixtures';
 import { ANCHOR_DATE } from '@/lib/clock';
 import { perms } from '@/lib/permissions';
@@ -31,6 +32,8 @@ import type {
   LevelOfConcern,
   CaseCategory,
   Notification,
+  HousePointAward,
+  HousePointReason,
 } from '@/lib/types';
 
 interface AppState {
@@ -50,6 +53,8 @@ interface AppState {
   clockOffsetDays: number;
   seq: number;
   attendanceMarks: Record<string, AttendanceMark>;
+  dutyMode: boolean;
+  housePointAwards: HousePointAward[];
 }
 
 export type AttendanceStatus = 'present' | 'late' | 'absent' | 'authorised';
@@ -80,6 +85,8 @@ function initialState(): AppState {
     clockOffsetDays: 0,
     seq: 5000,
     attendanceMarks: {},
+    dutyMode: false,
+    housePointAwards: HOUSE_POINT_AWARDS,
   };
 }
 
@@ -91,6 +98,7 @@ type Action_ =
   | { type: 'SWITCH_ROLE'; staffId: string }
   | { type: 'ADVANCE_CLOCK'; days: number }
   | { type: 'RESET_DEMO' }
+  | { type: 'TOGGLE_DUTY_MODE' }
   | {
       type: 'RAISE_CONCERN';
       payload: {
@@ -128,6 +136,7 @@ type Action_ =
   | { type: 'DISMISS_PATTERN_FLAG'; id: string; reason: string }
   | { type: 'AUTHORISE_CONTACT_EXCEPTION'; recordId: string; actorId: string }
   | { type: 'MARK_ATTENDANCE'; studentId: string; dateKey: string; status: AttendanceStatus; actorId: string }
+  | { type: 'AWARD_HOUSE_POINTS'; studentId: string; points: number; reason: HousePointReason; note?: string; actorId: string }
   | { type: 'UPDATE_SUPPORT_PLAN_GOAL'; recordId: string; goalIndex: number; status: 'on track' | 'needs attention' | 'met'; actorId: string }
   | { type: 'CLOSE_SUPPORT_PLAN'; recordId: string; actorId: string }
   | { type: 'UPDATE_REFERRAL_STATUS'; recordId: string; status: 'referred' | 'in progress' | 'completed' | 'declined'; actorId: string }
@@ -156,6 +165,8 @@ function reducer(state: AppState, action: Action_): AppState {
       return { ...state, clockOffsetDays: state.clockOffsetDays + action.days };
     case 'RESET_DEMO':
       return initialState();
+    case 'TOGGLE_DUTY_MODE':
+      return { ...state, dutyMode: !state.dutyMode };
     case 'RAISE_CONCERN': {
       const at = nowIso(state);
       const [caseId, n] = nextId(state, 'case');
@@ -407,6 +418,24 @@ function reducer(state: AppState, action: Action_): AppState {
         markedAt: at,
       };
       return { ...state, attendanceMarks: { ...state.attendanceMarks, [key]: mark } };
+    }
+    case 'AWARD_HOUSE_POINTS': {
+      const at = nowIso(state);
+      const [awardId, n] = nextId(state, 'house');
+      const student = state.students.find((s) => s.id === action.studentId);
+      if (!student) return state;
+      const award: HousePointAward = {
+        id: awardId,
+        studentId: action.studentId,
+        house: student.house,
+        points: action.points,
+        reason: action.reason,
+        note: action.note,
+        awardedById: action.actorId,
+        awardedAt: at,
+        ...withMeta(action.actorId, at),
+      };
+      return { ...state, housePointAwards: [...state.housePointAwards, award], seq: n };
     }
     case 'UPDATE_SUPPORT_PLAN_GOAL': {
       const at = nowIso(state);

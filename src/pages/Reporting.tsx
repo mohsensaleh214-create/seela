@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { Download } from 'lucide-react';
+import { Download, ArrowRight } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { staffName } from '@/lib/selectors';
 import { PageHeader } from '@/components/PageHeader';
@@ -16,18 +17,55 @@ function ChartCard({ title, sentence, children }: { title: string; sentence: str
     <Card className="p-5">
       <CardTitle>{title}</CardTitle>
       <p className="mt-1 text-[14px] text-ink-muted">{sentence}</p>
+      <p className="mt-1 text-[12px] text-ink-muted">Click a bar to see exactly which cases make it up.</p>
       <div className="mt-4">{children}</div>
     </Card>
   );
 }
 
-function StatTile({ title, sentence, value, detail }: { title: string; sentence: string; value: string; detail?: string }) {
+function StatTile({
+  title,
+  sentence,
+  value,
+  detail,
+  to,
+  linkLabel,
+}: {
+  title: string;
+  sentence: string;
+  value: string;
+  detail?: string;
+  to?: string;
+  linkLabel?: string;
+}) {
+  const navigate = useNavigate();
   return (
-    <Card className="p-5">
+    <Card
+      className={`flex flex-col p-5 ${to ? 'cursor-pointer hover:border-line-strong' : ''}`}
+      onClick={to ? () => navigate(to) : undefined}
+      role={to ? 'button' : undefined}
+      tabIndex={to ? 0 : undefined}
+      onKeyDown={
+        to
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate(to);
+              }
+            }
+          : undefined
+      }
+    >
       <CardTitle>{title}</CardTitle>
       <p className="mt-1 text-[14px] text-ink-muted">{sentence}</p>
       <p className="mt-3 text-[36px] font-semibold leading-none text-ink">{value}</p>
       {detail && <p className="mt-1 text-[13px] text-ink-muted">{detail}</p>}
+      {to && (
+        <p className="mt-2 flex items-center gap-1 text-[13px] font-medium text-safeguarding">
+          {linkLabel ?? 'See the cases'}
+          <ArrowRight size={13} aria-hidden />
+        </p>
+      )}
     </Card>
   );
 }
@@ -35,6 +73,7 @@ function StatTile({ title, sentence, value, detail }: { title: string; sentence:
 export function Reporting() {
   const { state } = useApp();
   const { show } = useToast();
+  const navigate = useNavigate();
 
   const byCategory = useMemo(() => {
     const map = new Map<string, number>();
@@ -52,7 +91,7 @@ export function Reporting() {
     const map = new Map<string, number>();
     for (const c of state.cases) map.set(c.reportedById, (map.get(c.reportedById) ?? 0) + 1);
     return Array.from(map.entries())
-      .map(([id, count]) => ({ name: staffName(state.staff.find((s) => s.id === id)), count }))
+      .map(([id, count]) => ({ id, name: staffName(state.staff.find((s) => s.id === id)), count }))
       .sort((a, b) => b.count - a.count);
   }, [state.cases, state.staff]);
 
@@ -97,7 +136,16 @@ export function Reporting() {
               <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12, fill: '#6B6B61' }} axisLine={{ stroke: '#E2DFD5' }} tickLine={false} />
               <YAxis type="category" dataKey="category" width={140} tick={{ fontSize: 12, fill: '#42423C' }} axisLine={false} tickLine={false} />
               <Tooltip cursor={{ fill: '#F2F0E9' }} contentStyle={{ borderRadius: 8, borderColor: '#E2DFD5', fontSize: 13 }} />
-              <Bar dataKey="count" fill={MUTED} radius={[0, 4, 4, 0]} maxBarSize={18} />
+              <Bar
+                dataKey="count"
+                fill={MUTED}
+                radius={[0, 4, 4, 0]}
+                maxBarSize={18}
+                cursor="pointer"
+                onClick={(entry: { payload?: { category: string } }) =>
+                  entry.payload && navigate(`/safeguarding/register?category=${encodeURIComponent(entry.payload.category)}`)
+                }
+              />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -109,7 +157,13 @@ export function Reporting() {
               <XAxis dataKey="level" tick={{ fontSize: 12, fill: '#42423C' }} axisLine={{ stroke: '#E2DFD5' }} tickLine={false} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#6B6B61' }} axisLine={false} tickLine={false} />
               <Tooltip cursor={{ fill: '#F2F0E9' }} contentStyle={{ borderRadius: 8, borderColor: '#E2DFD5', fontSize: 13 }} />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={64}>
+              <Bar
+                dataKey="count"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={64}
+                cursor="pointer"
+                onClick={(entry: { payload?: { level: string } }) => entry.payload && navigate(`/safeguarding/register?level=${entry.payload.level}`)}
+              >
                 {byLevel.map((entry) => (
                   <Cell key={entry.level} fill={LEVEL_COLOR[entry.level]} />
                 ))}
@@ -122,16 +176,22 @@ export function Reporting() {
           title="Average time to triage"
           sentence="How long a report waits before it is seen and given a level of concern."
           value={avgTriageHours === null ? '—' : `${avgTriageHours.toFixed(1)}h`}
+          to="/safeguarding/triage"
+          linkLabel="See the triage queue"
         />
         <StatTile
           title="Average time to close"
           sentence="From report to evidenced closure, for cases that have been closed."
           value={avgCloseDays === null ? '—' : `${avgCloseDays.toFixed(0)} days`}
+          to="/safeguarding/register?status=closed"
+          linkLabel="See closed cases"
         />
         <StatTile
           title="Contact-home completion rate"
           sentence="Elevated and immediate cases where a parent or carer was reached, or an exception was authorised."
           value={contactRate === null ? '—' : `${contactRate.toFixed(0)}%`}
+          to="/safeguarding/register?status=open"
+          linkLabel="See open cases"
         />
 
         <ChartCard title="Staff reporting spread" sentence="Who is raising concerns — a wide spread is healthy; a single name is worth a conversation.">
@@ -141,7 +201,14 @@ export function Reporting() {
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#42423C' }} axisLine={{ stroke: '#E2DFD5' }} tickLine={false} interval={0} angle={-20} textAnchor="end" height={60} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#6B6B61' }} axisLine={false} tickLine={false} />
               <Tooltip cursor={{ fill: '#F2F0E9' }} contentStyle={{ borderRadius: 8, borderColor: '#E2DFD5', fontSize: 13 }} />
-              <Bar dataKey="count" fill={MUTED} radius={[4, 4, 0, 0]} maxBarSize={40} />
+              <Bar
+                dataKey="count"
+                fill={MUTED}
+                radius={[4, 4, 0, 0]}
+                maxBarSize={40}
+                cursor="pointer"
+                onClick={(entry: { payload?: { id: string } }) => entry.payload && navigate(`/safeguarding/register?reportedBy=${entry.payload.id}`)}
+              />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>

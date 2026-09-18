@@ -32,7 +32,7 @@ is hidden by genuinely filtering the data model.
 | **Dan Whitfield** | Designated safeguarding lead, Boys School | Triages reports, proposes a level of concern, reads every safeguarding case on his own campus, reads the audit log for his campus. |
 | **Priya Nair** | School nurse | Full read and write access to medical records for every student. No access to wellbeing or safeguarding beyond the plain-language guidance line. |
 | **Tom Reilly** | Head of Year 9 and pastoral lead | Full wellbeing access for Year 9, summary medical access, and safeguarding access only for cases he is assigned to. |
-| **Sarah Ahmed** | Class teacher | Can raise a concern for any student. Otherwise sees only the plain-language guidance line for her own students — no underlying medical, wellbeing or safeguarding records. |
+| **Sarah Ahmed** | Class teacher, form tutor of 11S | Can raise a concern for any student. Otherwise sees the plain-language guidance line only for her own class (11S) — no underlying medical, wellbeing or safeguarding records — unless she switches on **duty mode**, which widens that to any student for the length of a cover period, a trip or a duty shift. |
 
 The exact capability matrix is rendered live at **Settings → Permissions** — the same
 table as below, but generated from the single `can(role, action, resource)` map the
@@ -68,10 +68,15 @@ Three controls, all clearly marked, so a live walkthrough never touches real sta
    entries now render as **redacted rows**, and the Safeguarding tab is **locked**.
    This is the single most important idea in the whole prototype: one student
    record, with the access boundary enforced per section, not per screen.
+   Open **Layla Al-Otaibi** (Year 9, not Sarah's class) and notice her allergy
+   guidance is now locked too — Sarah only sees guidance for her own class
+   (11S) by default. Switch on **duty mode** in the sidebar and reopen Layla —
+   the same allergy guidance a teacher covering her would need is now visible.
 5. As Sarah Ahmed, click **Raise a concern** in the sidebar. File a report either
    by typing a name or by choosing a school and class to browse — four short
    steps, a locked account after submission, and a plain confirmation that
-   names who it went to.
+   names who it went to. On the "others present" step, type `@` to tag a
+   colleague or another student from a grouped, filterable picker.
 6. Switch to **Dan Whitfield** and open **Safeguarding → Triage queue** — triage
    the report you just filed: set a level, assign an owner.
 7. Open **Omar Haddad**'s timeline (as Emily Carter) to see the **system pattern
@@ -89,6 +94,17 @@ Three controls, all clearly marked, so a live walkthrough never touches real sta
 11. **Settings → Audit log** (DSL and senior DSL only) — every view and change,
     read back as a plain sentence, with "who has viewed this case" visible
     directly on the case screen itself.
+12. **House points** — pick a student, tap a reason (Effort, Kindness,
+    Teamwork, Leadership, Achievement), done. The three house totals (Safa,
+    Marwa, Arafat) update live with a leaderboard and a running feed of who
+    gave what to whom. The same one-tap panel is also available as a **Points**
+    button on every row in Registration.
+13. **Reporting → Cases by level of concern** — click a bar and land on the
+    register filtered to that exact level; the same works for the category
+    chart, the staff-spread chart, and the average-time stat tiles. Every
+    list-screen filter (level, status, owner, category, school, class,
+    reported by) lives in the URL, so a filtered view can be copied and sent
+    to a colleague.
 
 ## The six students worth knowing
 
@@ -175,6 +191,37 @@ Three controls, all clearly marked, so a live walkthrough never touches real sta
   (same visual treatment as the safeguarding boundary) for students outside it,
   rather than hiding the whole Wellbeing tab — a pastoral lead should be able to
   tell the boundary exists.
+- **"Own students" made real.** This was originally stubbed as "true for any
+  student a teacher looks up" — a placeholder that quietly gave every teacher
+  guidance visibility over the whole school. `Staff.homeroomOf` now names the
+  classes a teacher actually teaches (Sarah Ahmed is form tutor of 11S), and
+  `canSeeStudentGuidance` checks a looked-up student's tutor group against it.
+  Because a teacher's job genuinely does need to widen sometimes — cover, a
+  trip, a break duty — there's a duty-mode toggle in the sidebar (visible only
+  to roles with a scoped guidanceScope) that lifts the restriction for as long
+  as it's on, with a locked banner explaining the boundary when it's off.
+- **House points.** Not in the original brief; added on request. Houses (Safa,
+  Marwa, Arafat) get their own token family (`--color-safa/marwa/arafat`),
+  deliberately distinct from the portal accents and the urgent/caution/steady
+  semantics so the two systems never get read as related. Awarding is
+  one tap once a student is picked — reason buttons carry a preset point value
+  (Kindness/Effort +3, Teamwork/Leadership +5, Achievement +10) rather than a
+  separate amount picker, on the view that a second decision is a second
+  reason to not bother. It's reachable from its own page and, since the
+  moment a teacher is most likely to want it is while taking the register,
+  from a **Points** button on every Registration row.
+- **Reporting drill-down and URL-synced filters.** The brief asks for list-
+  screen filters that "persist in the URL so a view can be shared with a
+  colleague" (section 7) — implemented as a small `useQueryParam` hook and
+  wired into the safeguarding register. Reporting's charts and stat tiles
+  now read as entry points into that same filtered register rather than a
+  dead end: click a bar, land on exactly the cases behind it.
+- **Fixed: raising a concern from a known student.** Flagging a student from
+  Registration or a profile page used to still ask "who is this about?" —
+  the student id arrived via the URL but the wizard didn't use it to skip
+  ahead. It now opens straight on "what happened" with the student shown in
+  a persistent header (and a "change student" link), instead of re-asking a
+  question the click already answered.
 
 ## What's intentionally not here
 

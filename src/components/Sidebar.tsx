@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Stethoscope, HeartHandshake, ShieldAlert, Home, ClipboardList, Plane, BarChart3, Settings, Plus, X } from 'lucide-react';
+import { Stethoscope, HeartHandshake, ShieldAlert, Home, ClipboardList, Plane, BarChart3, Settings, Plus, X, Eye, Trophy } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { canEnterPortal } from '@/lib/permissions';
 import { portalSubNav } from '@/lib/nav';
@@ -10,7 +10,7 @@ import { staffName } from '@/lib/selectors';
 import { tone } from '@/lib/portal-theme';
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
-  const { currentUser, permissions } = useApp();
+  const { currentUser, permissions, state, dispatch } = useApp();
   const location = useLocation();
 
   const portals = [
@@ -54,6 +54,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <nav aria-label="Portals" className="flex flex-col gap-0.5 px-3">
         <SidebarLink to="/" label="Today" Icon={Home} onNavigate={onNavigate} end />
         <SidebarLink to="/registration" label="Registration" Icon={ClipboardList} onNavigate={onNavigate} />
+        <SidebarLink to="/house-points" label="House points" Icon={Trophy} onNavigate={onNavigate} />
         {portals
           .filter((p) => p.allowed)
           .map((p) => (
@@ -77,6 +78,35 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       )}
 
       <div className="mt-auto border-t border-line px-4 py-4">
+        {permissions.guidanceScope !== 'all' && (
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'TOGGLE_DUTY_MODE' })}
+            aria-pressed={state.dutyMode}
+            className={`mb-3 flex w-full items-center justify-between gap-2 rounded-[8px] border px-3 py-2.5 text-left transition-colors duration-150 ${
+              state.dutyMode ? 'border-caution bg-caution-tint' : 'border-line-strong bg-surface hover:bg-surface-sunken'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <Eye size={16} className={state.dutyMode ? 'text-caution-deep' : 'text-ink-muted'} aria-hidden />
+              <span>
+                <span className={`block text-[13px] font-medium ${state.dutyMode ? 'text-caution-deep' : 'text-ink'}`}>On duty</span>
+                <span className="block text-[11px] text-ink-muted">See guidance for any student</span>
+              </span>
+            </span>
+            <span
+              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-150 ${
+                state.dutyMode ? 'bg-caution' : 'bg-line-strong'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-150 ${
+                  state.dutyMode ? 'translate-x-[18px]' : 'translate-x-0.5'
+                }`}
+              />
+            </span>
+          </button>
+        )}
         <div className="flex items-center gap-2.5">
           <PersonAvatar name={staffName(currentUser)} size={36} />
           <div className="min-w-0 flex-1">

@@ -12,7 +12,17 @@ import type {
   AuditEvent,
   Activity,
   PatternFlagState,
+  House,
+  HousePointAward,
+  HousePointReason,
 } from './types';
+
+const HOUSES: House[] = ['Safa', 'Marwa', 'Arafat'];
+function houseFor(studentId: string): House {
+  let sum = 0;
+  for (let i = 0; i < studentId.length; i += 1) sum += studentId.charCodeAt(i);
+  return HOUSES[sum % 3];
+}
 
 let seq = 0;
 function id(prefix: string): string {
@@ -87,6 +97,7 @@ export const STAFF: Staff[] = [
     campus: 'Girls School',
     email: 'sarah.ahmed@miskschools.edu',
     certifications: [{ name: 'Safeguarding awareness (Level 1)', expiry: '2026-11-01' }],
+    homeroomOf: ['11S'],
     ...meta('system'),
   },
 ];
@@ -285,6 +296,7 @@ export const STUDENTS: Student[] = ALL_SEED_STUDENTS.map((s) => ({
   guardians: s.guardians,
   flagIds: [],
   attendanceByWeek: s.attendance,
+  house: houseFor(s.id),
   ...meta('system'),
 }));
 
@@ -908,6 +920,41 @@ export const AUDIT_EVENTS: AuditEvent[] = [
     entityLabel: 'the audit log',
     at: fromAnchor(-1, 12, 0),
   },
+];
+
+// ---------------------------------------------------------------------------
+// House points
+// ---------------------------------------------------------------------------
+
+function studentHouse(studentId: string): House {
+  return STUDENTS.find((s) => s.id === studentId)?.house ?? 'Safa';
+}
+
+function award(studentId: string, points: number, reason: HousePointReason, awardedById: string, at: string): HousePointAward {
+  return {
+    id: id('house'),
+    studentId,
+    house: studentHouse(studentId),
+    points,
+    reason,
+    awardedById,
+    awardedAt: at,
+    ...meta(awardedById, at),
+  };
+}
+
+export const HOUSE_POINT_AWARDS: HousePointAward[] = [
+  award(sid('sophie-brennan'), 5, 'Kindness', 'staff-sarah-ahmed', fromAnchor(-6, 9, 10)),
+  award(sid('grace-thompson'), 3, 'Effort', 'staff-sarah-ahmed', fromAnchor(-5, 14, 20)),
+  award(sid('omar-haddad'), 5, 'Teamwork', 'staff-tom-reilly', fromAnchor(-4, 11, 0)),
+  award(sid('layla-alotaibi'), 10, 'Achievement', 'staff-tom-reilly', fromAnchor(-4, 15, 45)),
+  award(sid('hana-nakamura'), 3, 'Effort', 'staff-dan-whitfield', fromAnchor(-3, 9, 30)),
+  award(sid('yusuf-rahman'), 5, 'Leadership', 'staff-priya-nair', fromAnchor(-3, 12, 15)),
+  award('stu-filler-2', 3, 'Kindness', 'staff-sarah-ahmed', fromAnchor(-2, 10, 5)),
+  award('stu-filler-7', 5, 'Teamwork', 'staff-emily-carter', fromAnchor(-2, 13, 40)),
+  award(sid('daniel-okoro'), 3, 'Effort', 'staff-tom-reilly', fromAnchor(-1, 9, 50)),
+  award('stu-filler-11', 5, 'Achievement', 'staff-priya-nair', fromAnchor(-1, 16, 0)),
+  award(sid('fatima-zahra'), 3, 'Kindness', 'staff-dan-whitfield', fromAnchor(0, 8, 45)),
 ];
 
 export const SEED_SEQUENCE = seq;

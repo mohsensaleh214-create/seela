@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { TextField, TextAreaField, SelectField, DateField } from '@/components/ui/FormField';
 import { StudentChip } from '@/components/ui/StudentChip';
 import { Banner } from '@/components/ui/Banner';
+import { PeopleMentionField, type MentionPerson } from '@/components/PeopleMentionField';
 
 const CATEGORIES: CaseCategory[] = [
   'Peer relationships',
@@ -30,19 +31,22 @@ export function RaiseConcern() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(1);
+  const prefilledStudentId = searchParams.get('student') ?? '';
+
+  const [step, setStep] = useState(prefilledStudentId ? 2 : 1);
   const [done, setDone] = useState<string | null>(null);
 
   const [studentQuery, setStudentQuery] = useState('');
   const [pickSchool, setPickSchool] = useState<SchoolTier | ''>('');
   const [pickClass, setPickClass] = useState('');
-  const [studentId, setStudentId] = useState(searchParams.get('student') ?? '');
+  const [studentId, setStudentId] = useState(prefilledStudentId);
   const [category, setCategory] = useState<CaseCategory>('Peer relationships');
   const [occurredDate, setOccurredDate] = useState(new Date().toISOString().slice(0, 10));
   const [occurredTime, setOccurredTime] = useState('09:00');
   const [location, setLocation] = useState('');
   const [account, setAccount] = useState('');
-  const [othersPresent, setOthersPresent] = useState('');
+  const [othersText, setOthersText] = useState('');
+  const [othersPeople, setOthersPeople] = useState<MentionPerson[]>([]);
   const [hadDisclosure, setHadDisclosure] = useState(false);
   const [studentWords, setStudentWords] = useState('');
   const [confirmed, setConfirmed] = useState(false);
@@ -62,6 +66,13 @@ export function RaiseConcern() {
   const step1Valid = !!studentId;
   const step2Valid = category && occurredDate && location.trim().length > 0 && account.trim().length >= 20;
 
+  const othersPresentSummary = [
+    othersText.trim(),
+    othersPeople.length > 0 ? `Present: ${othersPeople.map((p) => `${p.name} (${p.type})`).join(', ')}` : '',
+  ]
+    .filter(Boolean)
+    .join(' — ');
+
   function submit() {
     if (!student) return;
     dispatch({
@@ -74,7 +85,7 @@ export function RaiseConcern() {
         location,
         account,
         studentWords: hadDisclosure ? studentWords : undefined,
-        othersPresent: othersPresent || undefined,
+        othersPresent: othersPresentSummary || undefined,
         reportedById: currentUser.id,
       },
     });
@@ -114,7 +125,8 @@ export function RaiseConcern() {
                   setStudentQuery('');
                   setAccount('');
                   setLocation('');
-                  setOthersPresent('');
+                  setOthersText('');
+                  setOthersPeople([]);
                   setStudentWords('');
                   setHadDisclosure(false);
                   setConfirmed(false);
@@ -154,6 +166,19 @@ export function RaiseConcern() {
           );
         })}
       </ol>
+
+      {step > 1 && student && (
+        <div className="flex items-center justify-between rounded-[8px] bg-surface-sunken px-4 py-2.5">
+          <StudentChip student={student} />
+          <button
+            type="button"
+            onClick={() => setStep(1)}
+            className="text-[13px] font-medium text-ink-muted underline decoration-line-strong hover:text-ink"
+          >
+            Change student
+          </button>
+        </div>
+      )}
 
       <Card className="p-6">
         {step === 1 && (
@@ -267,12 +292,13 @@ export function RaiseConcern() {
 
         {step === 3 && (
           <div className="flex flex-col gap-4">
-            <TextField
+            <PeopleMentionField
               label="Who else was present"
-              hint="Optional"
-              value={othersPresent}
-              onChange={(e) => setOthersPresent(e.target.value)}
-              placeholder="e.g. None — one to one conversation"
+              hint="Type @ to tag a member of staff or a student"
+              text={othersText}
+              onTextChange={setOthersText}
+              people={othersPeople}
+              onPeopleChange={setOthersPeople}
             />
             <label className="inline-flex items-center gap-2 text-[15px] text-ink">
               <input type="checkbox" checked={hadDisclosure} onChange={(e) => setHadDisclosure(e.target.checked)} />
@@ -298,7 +324,7 @@ export function RaiseConcern() {
               <ReviewRow label="When" value={`${occurredDate} at ${occurredTime}`} />
               <ReviewRow label="Place" value={location} />
               <ReviewRow label="Account" value={account} />
-              {othersPresent && <ReviewRow label="Others present" value={othersPresent} />}
+              {othersPresentSummary && <ReviewRow label="Others present" value={othersPresentSummary} />}
               {hadDisclosure && studentWords && <ReviewRow label="Student's own words" value={studentWords} />}
             </dl>
             <Banner tone="caution">

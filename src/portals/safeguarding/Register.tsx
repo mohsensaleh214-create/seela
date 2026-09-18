@@ -5,6 +5,7 @@ import { useApp } from '@/context/AppContext';
 import { studentName, staffName, canReadCase } from '@/lib/selectors';
 import { daysBetween, lastMovementAt } from '@/lib/safeguarding';
 import { SCHOOL_TIERS, classesBySchool, schoolTier, type SchoolTier } from '@/lib/school';
+import { useQueryParam } from '@/lib/useQueryParam';
 import type { Case } from '@/lib/types';
 import { PageHeader } from '@/components/PageHeader';
 import { DataTable, type Column } from '@/components/ui/DataTable';
@@ -22,16 +23,17 @@ export function Register() {
   const navigate = useNavigate();
   const { show } = useToast();
 
-  const [level, setLevel] = useState('');
-  const [status, setStatus] = useState('');
-  const [owner, setOwner] = useState('');
-  const [category, setCategory] = useState('');
-  const [school, setSchool] = useState<SchoolTier | ''>('');
-  const [tutorGroup, setTutorGroup] = useState('');
+  const [level, setLevel] = useQueryParam('level');
+  const [status, setStatus] = useQueryParam('status');
+  const [owner, setOwner] = useQueryParam('owner');
+  const [category, setCategory] = useQueryParam('category');
+  const [school, setSchool] = useQueryParam('school');
+  const [tutorGroup, setTutorGroup] = useQueryParam('class');
+  const [reportedBy, setReportedBy] = useQueryParam('reportedBy');
   const [savedViews, setSavedViews] = useState<string[]>([]);
 
   const classMap = useMemo(() => classesBySchool(state.students), [state.students]);
-  const classOptions = school ? (classMap.get(school) ?? []) : [];
+  const classOptions = school ? (classMap.get(school as SchoolTier) ?? []) : [];
 
   const readableCases = useMemo(
     () =>
@@ -49,6 +51,7 @@ export function Register() {
     if (status && c.status !== status) return false;
     if (owner && c.ownerId !== owner) return false;
     if (category && c.category !== category) return false;
+    if (reportedBy && c.reportedById !== reportedBy) return false;
     const student = state.students.find((s) => s.id === c.studentId);
     if (school && (!student || schoolTier(student.yearGroup) !== school)) return false;
     if (tutorGroup && student?.tutorGroup !== tutorGroup) return false;
@@ -96,6 +99,7 @@ export function Register() {
     category && { key: 'category', label: category, onRemove: () => setCategory('') },
     school && { key: 'school', label: school, onRemove: () => { setSchool(''); setTutorGroup(''); } },
     tutorGroup && { key: 'class', label: tutorGroup, onRemove: () => setTutorGroup('') },
+    reportedBy && { key: 'reportedBy', label: `Reported by ${staffName(state.staff.find((s) => s.id === reportedBy))}`, onRemove: () => setReportedBy('') },
   ].filter(Boolean) as { key: string; label: string; onRemove: () => void }[];
 
   if (permissions.safeguarding === 'none') return <LockedPortal portal="Safeguarding" />;
@@ -157,12 +161,18 @@ export function Register() {
           label="School"
           value={school}
           onChange={(v) => {
-            setSchool(v as SchoolTier | '');
+            setSchool(v);
             setTutorGroup('');
           }}
           options={SCHOOL_TIERS.map((t) => ({ value: t, label: t }))}
         />
         <FilterSelect label="Class" value={tutorGroup} onChange={setTutorGroup} options={classOptions.map((c) => ({ value: c, label: c }))} />
+        <FilterSelect
+          label="Reported by"
+          value={reportedBy}
+          onChange={setReportedBy}
+          options={state.staff.map((s) => ({ value: s.id, label: staffName(s) }))}
+        />
       </FilterBar>
 
       {rows.length === 0 ? (

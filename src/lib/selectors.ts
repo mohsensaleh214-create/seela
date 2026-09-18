@@ -27,17 +27,25 @@ export function canReadCase(
   return true;
 }
 
-export function canSeePortalGuidance(perm: RolePermissions, student: Student, currentUser: Staff): boolean {
-  if (perm.guidanceScope === 'all') return true;
-  if (perm.guidanceScope === 'own-year') return student.yearGroup === yearGroupForStaff(currentUser);
-  if (perm.guidanceScope === 'own-students') return true; // prototype: teachers can see guidance for any student they look up
-  return false;
-}
-
-function yearGroupForStaff(staff: Staff): number | null {
+export function yearGroupForStaff(staff: Staff): number | null {
   // Tom Reilly is Head of Year 9 in the seed data; inferred from job title for the demo.
   const match = staff.jobTitle.match(/Year (\d+)/);
   return match ? Number(match[1]) : null;
+}
+
+/**
+ * Whether a member of staff can see the plain-language guidance line (and the
+ * flags behind it) for a given student. "Own students" for a teacher means a
+ * class they are the homeroom/form tutor for, unless duty mode is on — a
+ * school-wide cover moment (break duty, a trip, a fire drill) where a teacher
+ * may reasonably need to see any student's guidance.
+ */
+export function canSeeStudentGuidance(perm: RolePermissions, student: Student, currentUser: Staff, dutyMode: boolean): boolean {
+  if (perm.guidanceScope === 'all') return true;
+  if (dutyMode) return true;
+  if (perm.guidanceScope === 'own-year') return student.yearGroup === yearGroupForStaff(currentUser);
+  if (perm.guidanceScope === 'own-students') return (currentUser.homeroomOf ?? []).includes(student.tutorGroup);
+  return false;
 }
 
 export function levelRank(level: Case['level']): number {

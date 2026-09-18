@@ -46,6 +46,19 @@
   --color-info: #2c5e8a;
   --color-info-tint: #e5edf3;
 
+  /* House points — deliberately distinct from the portal accents and
+     semantic colours above; always paired with the house name, never
+     colour alone. */
+  --color-safa: #1f6fa0;
+  --color-safa-deep: #154d73;
+  --color-safa-tint: #e3eef5;
+  --color-marwa: #a9760a;
+  --color-marwa-deep: #7a560a;
+  --color-marwa-tint: #f5eedd;
+  --color-arafat: #8b3a48;
+  --color-arafat-deep: #632a34;
+  --color-arafat-tint: #f3e4e7;
+
   --radius-input: 8px;
   --radius-card: 12px;
   --radius-modal: 16px;

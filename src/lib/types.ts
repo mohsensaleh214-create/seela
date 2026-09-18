@@ -5,6 +5,8 @@ export type Role = 'teacher' | 'pastoral-lead' | 'nurse' | 'dsl' | 'senior-dsl';
 
 export type Portal = 'medical' | 'wellbeing' | 'safeguarding';
 
+export type House = 'Safa' | 'Marwa' | 'Arafat';
+
 export interface WithMeta {
   id: string;
   createdAt: string;
@@ -32,6 +34,19 @@ export interface Student extends WithMeta {
   guardians: Guardian[];
   flagIds: string[];
   attendanceByWeek?: number[]; // last 8 weeks, percentage, most recent last
+  house: House;
+}
+
+export type HousePointReason = 'Effort' | 'Kindness' | 'Teamwork' | 'Achievement' | 'Leadership';
+
+export interface HousePointAward extends WithMeta {
+  studentId: string;
+  house: House;
+  points: number;
+  reason: HousePointReason;
+  note?: string;
+  awardedById: string;
+  awardedAt: string;
 }
 
 export interface Certification {
@@ -47,6 +62,8 @@ export interface Staff extends WithMeta {
   campus: 'Girls School' | 'Boys School' | 'Both campuses';
   email: string;
   certifications: Certification[];
+  /** Tutor groups this person teaches or is form tutor for, e.g. ["7B", "9G"]. */
+  homeroomOf?: string[];
 }
 
 export type CaseCategory =
@@ -180,7 +197,7 @@ export interface AuditEvent {
   id: string;
   actorId: string;
   action: AuditAction;
-  entityType: 'student' | 'case' | 'medical-record' | 'wellbeing-record' | 'audit-log' | 'report' | 'permissions';
+  entityType: 'student' | 'case' | 'medical-record' | 'wellbeing-record' | 'audit-log' | 'report' | 'permissions' | 'house-points';
   entityId: string;
   entityLabel: string;
   at: string;
