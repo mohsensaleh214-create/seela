@@ -1,17 +1,26 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { AlertCircle, Clock3, Sparkles } from 'lucide-react';
+import { AlertCircle, Clock3, Sparkles, Stethoscope, HeartHandshake, ShieldAlert, type LucideIcon } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { canEnterPortal } from '@/lib/permissions';
+import { tone } from '@/lib/portal-theme';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Card } from '@/components/ui/Card';
 
 function greeting(now: Date): string {
   const hour = now.getHours();
   if (hour < 12) return 'Good morning';
   if (hour < 17) return 'Good afternoon';
   return 'Good evening';
+}
+
+interface PortalCard {
+  key: 'wellbeing' | 'safeguarding' | 'medical';
+  label: string;
+  to: string;
+  stat: string;
+  needsAttention: number;
+  Icon: LucideIcon;
 }
 
 export function Today() {
@@ -23,31 +32,61 @@ export function Today() {
 
   const nothingOutstanding = overdue.length === 0 && dueToday.length === 0 && fresh.length === 0;
 
-  const portalSummaries = useMemo(() => {
-    const items: { label: string; to: string; stat: string }[] = [];
+  const portalCards = useMemo(() => {
+    const cards: PortalCard[] = [];
+    if (canEnterPortal(currentUser.role, 'wellbeing')) {
+      const active = state.wellbeingRecords.filter((r) => r.type === 'support-plan' && r.planStatus === 'active').length;
+      cards.push({
+        key: 'wellbeing',
+        label: 'Wellbeing',
+        to: '/wellbeing',
+        stat: `${active} active support plan${active === 1 ? '' : 's'}`,
+        needsAttention: 0,
+        Icon: HeartHandshake,
+      });
+    }
     if (canEnterPortal(currentUser.role, 'safeguarding')) {
       const mine = state.cases.filter((c) => c.status === 'open' && c.ownerId === currentUser.id);
-      items.push({ label: 'Safeguarding', to: '/safeguarding/register', stat: `${mine.length} open case${mine.length === 1 ? '' : 's'} in your caseload` });
+      cards.push({
+        key: 'safeguarding',
+        label: 'Safeguarding',
+        to: '/safeguarding',
+        stat: `${mine.length} open case${mine.length === 1 ? '' : 's'} in your caseload`,
+        needsAttention: overdue.length + dueToday.length,
+        Icon: ShieldAlert,
+      });
     }
     if (canEnterPortal(currentUser.role, 'medical')) {
       const flagged = state.medicalRecords.filter((m) => m.type === 'allergy' || m.type === 'plan').length;
-      items.push({ label: 'Medical', to: '/medical', stat: `${flagged} student${flagged === 1 ? '' : 's'} with an allergy or healthcare plan` });
+      cards.push({
+        key: 'medical',
+        label: 'Medical',
+        to: '/medical',
+        stat: `${flagged} student${flagged === 1 ? '' : 's'} with an allergy or healthcare plan`,
+        needsAttention: 0,
+        Icon: Stethoscope,
+      });
     }
-    if (canEnterPortal(currentUser.role, 'wellbeing')) {
-      const active = state.wellbeingRecords.filter((r) => r.type === 'support-plan' && r.planStatus === 'active').length;
-      items.push({ label: 'Wellbeing', to: '/wellbeing/plans', stat: `${active} active support plan${active === 1 ? '' : 's'}` });
-    }
-    return items;
-  }, [state.cases, state.medicalRecords, state.wellbeingRecords, currentUser]);
+    return cards;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.cases, state.medicalRecords, state.wellbeingRecords, currentUser, overdue.length, dueToday.length]);
 
   return (
-    <div className="mx-auto flex w-full max-w-[720px] flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-[900px] flex-col gap-8">
       <div>
         <h1 className="text-[28px] font-semibold leading-[1.2] text-ink">
           {greeting(now)}, {currentUser.firstName}
         </h1>
         <p className="mt-1 text-[15px] text-ink-muted">{format(now, 'd MMM yyyy')}</p>
       </div>
+
+      {portalCards.length > 0 && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {portalCards.map((p) => (
+            <PortalCardTile key={p.key} card={p} />
+          ))}
+        </div>
+      )}
 
       {nothingOutstanding ? (
         <EmptyState
@@ -68,30 +107,43 @@ export function Today() {
           )}
         </div>
       )}
-
-      {portalSummaries.length > 0 && (
-        <div className="flex flex-col gap-2 border-t border-line pt-6">
-          <p className="text-[13px] font-medium uppercase tracking-wide text-ink-muted">Your portals</p>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            {portalSummaries.map((p) => (
-              <Link key={p.label} to={p.to} className="flex-1">
-                <Card className="p-4 hover:bg-surface-sunken">
-                  <p className="text-[14px] font-medium text-ink">{p.label}</p>
-                  <p className="mt-0.5 text-[13px] text-ink-muted">{p.stat}</p>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
+  );
+}
+
+function PortalCardTile({ card }: { card: PortalCard }) {
+  const t = tone(card.key);
+  return (
+    <Link
+      to={card.to}
+      className="group flex flex-col gap-3 rounded-[12px] border border-line p-5 transition-colors duration-150 ease-out hover:border-line-strong"
+      style={{ backgroundColor: t.tint }}
+    >
+      <div className="flex items-start justify-between">
+        <span
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-white"
+          style={{ backgroundColor: t.accent }}
+        >
+          <card.Icon size={20} aria-hidden />
+        </span>
+        {card.needsAttention > 0 && (
+          <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-urgent px-1.5 text-[12px] font-semibold text-white">
+            {card.needsAttention}
+          </span>
+        )}
+      </div>
+      <div>
+        <p className="text-[19px] font-semibold text-ink">{card.label}</p>
+        <p className="mt-0.5 text-[14px] text-ink-body">{card.stat}</p>
+      </div>
+    </Link>
   );
 }
 
 function NotifSection({
   title,
   icon: Icon,
-  tone,
+  tone: toneClass,
   items,
 }: {
   title: string;
@@ -101,7 +153,7 @@ function NotifSection({
 }) {
   return (
     <div>
-      <p className={`flex items-center gap-1.5 text-[13px] font-medium uppercase tracking-wide ${tone}`}>
+      <p className={`flex items-center gap-1.5 text-[13px] font-medium uppercase tracking-wide ${toneClass}`}>
         <Icon size={14} aria-hidden />
         {title}
       </p>

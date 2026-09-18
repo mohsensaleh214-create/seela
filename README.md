@@ -52,33 +52,41 @@ Three controls, all clearly marked, so a live walkthrough never touches real sta
 
 ## A five-minute demo sequence
 
-1. **Today**, as Emily Carter — a quiet landing screen with nothing competing for
-   attention, showing what's overdue, due today, and newly assigned.
-2. Open **Sophie Brennan** from anywhere (search, ⌘K) → her **student profile**.
-   Walk the tabs: Overview (plain guidance only), Timeline (the unified,
-   cross-portal chronology), Safeguarding (the actual case).
-3. Switch role to **Sarah Ahmed** (teacher) and reopen Sophie's timeline — most
+1. **Today**, as Emily Carter — the three portals (Wellbeing, Safeguarding,
+   Medical) front and centre as big cards, each with a one-line stat and a red
+   count badge when something in it needs attention. Below that: what's overdue,
+   due today, and newly assigned.
+2. **Registration**, choose a school (Middle Schools) and class (7B) — today's
+   register for that class, with a quick **Flag** button on every row. This is
+   the natural everyday flagging moment: a teacher taking the register notices
+   something and raises it on the spot, without leaving the screen.
+3. Open **Sophie Brennan** from anywhere (search, ⌘K, or from her class in
+   Registration) → her **student profile**. Walk the tabs: Overview (plain
+   guidance only), Timeline (the unified, cross-portal chronology),
+   Safeguarding (the actual case).
+4. Switch role to **Sarah Ahmed** (teacher) and reopen Sophie's timeline — most
    entries now render as **redacted rows**, and the Safeguarding tab is **locked**.
    This is the single most important idea in the whole prototype: one student
    record, with the access boundary enforced per section, not per screen.
-4. As Sarah Ahmed, click **Raise a concern** in the sidebar and file a report on
-   any student — four short steps, a locked account after submission, and a plain
-   confirmation that names who it went to.
-5. Switch to **Dan Whitfield** and open **Safeguarding → Triage queue** — triage
+5. As Sarah Ahmed, click **Raise a concern** in the sidebar. File a report either
+   by typing a name or by choosing a school and class to browse — four short
+   steps, a locked account after submission, and a plain confirmation that
+   names who it went to.
+6. Switch to **Dan Whitfield** and open **Safeguarding → Triage queue** — triage
    the report you just filed: set a level, assign an owner.
-6. Open **Omar Haddad**'s timeline (as Emily Carter) to see the **attendance
-   overlay** sit visibly under a cluster of nurse visits and the **system pattern
-   flag** it produces — acknowledge or dismiss it and note it never reads as a
-   decision the system made.
-7. Open **Sophie Brennan's case** and try **Close case** — it blocks on the four
+7. Open **Omar Haddad**'s timeline (as Emily Carter) to see the **system pattern
+   flag** it produces from three nurse visits and a real attendance drop —
+   acknowledge or dismiss it and note it never reads as a decision the system
+   made.
+8. Open **Sophie Brennan's case** and try **Close case** — it blocks on the four
    closure conditions and says exactly which are unmet.
-8. Use **advance the clock by a day**, then look at **Today** as Emily Carter — an
+9. Use **advance the clock by a day**, then look at **Today** as Emily Carter — an
    action on Sophie's case becomes overdue and **escalates** to her because the
    owner hasn't acted.
-9. Open **Activities → Al-Ula residential trip** — the flagship cross-portal
-   screen: plain-language guidance for every attending student, drawn from all
-   three portals, never exposing an underlying case.
-10. **Settings → Audit log** (DSL and senior DSL only) — every view and change,
+10. Open **Activities → Al-Ula residential trip** — the flagship cross-portal
+    screen: plain-language guidance for every attending student, drawn from all
+    three portals, never exposing an underlying case.
+11. **Settings → Audit log** (DSL and senior DSL only) — every view and change,
     read back as a plain sentence, with "who has viewed this case" visible
     directly on the case screen itself.
 
@@ -134,6 +142,24 @@ Three controls, all clearly marked, so a live walkthrough never touches real sta
 - **Documents tab.** Shown on the student profile per the spec, but since file
   upload is explicitly out of scope, it's a labelled empty state rather than a
   half-built feature.
+- **Registration, and dropping the attendance overlay.** An early version put an
+  attendance bar chart directly behind the unified timeline; live feedback was
+  that it didn't read well merged into a case chronology. Attendance now lives
+  in its own **Registration** screen (school → class → today's register, with a
+  flag button on every row — a genuine everyday moment to raise a concern), and
+  the timeline instead relies on the system pattern flag's own sentence (e.g.
+  "three nurse visits and a 15 percentage point attendance drop") to carry that
+  signal. Registration itself is deliberately not one of the three home-page
+  portal cards: taking a register isn't something you'd ever "flag" the way you
+  flag a wellbeing, safeguarding or medical concern.
+- **School and class filters.** "School" here means the tier a year group sits
+  in on the Misk Schools curriculum map — Junior Schools, Upper Primary Schools,
+  Middle Schools, Senior Schools (`src/lib/school.ts`) — derived from
+  `yearGroup`, not the Girls/Boys campus already in the brief's own staff table.
+  Both now exist as complementary filters. They replace name-only search as the
+  primary way to find a student in Raise a concern, Registration, and the
+  safeguarding register, while keeping the name search for when you already
+  know who you're looking for.
 - **Contrast over the literal token table.** Section 2 of the brief specifies
   exact hex values for every token, and section 8 separately requires 4.5:1 body
   text contrast and 3:1 for interface boundaries. A few combinations in the

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { studentName, staffName } from '@/lib/selectors';
+import { SCHOOL_TIERS, classesBySchool, type SchoolTier } from '@/lib/school';
 import type { CaseCategory } from '@/lib/types';
 import { PageHeader } from '@/components/PageHeader';
 import { Card } from '@/components/ui/Card';
@@ -33,6 +34,8 @@ export function RaiseConcern() {
   const [done, setDone] = useState<string | null>(null);
 
   const [studentQuery, setStudentQuery] = useState('');
+  const [pickSchool, setPickSchool] = useState<SchoolTier | ''>('');
+  const [pickClass, setPickClass] = useState('');
   const [studentId, setStudentId] = useState(searchParams.get('student') ?? '');
   const [category, setCategory] = useState<CaseCategory>('Peer relationships');
   const [occurredDate, setOccurredDate] = useState(new Date().toISOString().slice(0, 10));
@@ -46,11 +49,15 @@ export function RaiseConcern() {
 
   const student = state.students.find((s) => s.id === studentId);
 
+  const classMap = useMemo(() => classesBySchool(state.students), [state.students]);
+  const classOptions = pickSchool ? (classMap.get(pickSchool) ?? []) : [];
+
   const matches = useMemo(() => {
     const q = studentQuery.trim().toLowerCase();
-    if (q.length < 2) return [];
-    return state.students.filter((s) => studentName(s).toLowerCase().includes(q)).slice(0, 8);
-  }, [studentQuery, state.students]);
+    if (q.length >= 2) return state.students.filter((s) => studentName(s).toLowerCase().includes(q)).slice(0, 8);
+    if (pickClass) return state.students.filter((s) => s.tutorGroup === pickClass).sort((a, b) => studentName(a).localeCompare(studentName(b)));
+    return [];
+  }, [studentQuery, pickClass, state.students]);
 
   const step1Valid = !!studentId;
   const step2Valid = category && occurredDate && location.trim().length > 0 && account.trim().length >= 20;
@@ -159,6 +166,47 @@ export function RaiseConcern() {
               placeholder="e.g. Soph"
               autoFocus
             />
+            <div className="flex items-center gap-3 text-[13px] text-ink-muted">
+              <span className="h-px flex-1 bg-line" />
+              or browse by class
+              <span className="h-px flex-1 bg-line" />
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <label className="flex flex-col gap-1.5 text-[13px] font-medium text-ink-muted">
+                School
+                <select
+                  value={pickSchool}
+                  onChange={(e) => {
+                    setPickSchool(e.target.value as SchoolTier | '');
+                    setPickClass('');
+                  }}
+                  className="min-h-[44px] rounded-[8px] border border-line-strong bg-surface px-3 py-2.5 text-[15px] text-ink"
+                >
+                  <option value="">Choose a school</option>
+                  {SCHOOL_TIERS.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1.5 text-[13px] font-medium text-ink-muted">
+                Class
+                <select
+                  value={pickClass}
+                  onChange={(e) => setPickClass(e.target.value)}
+                  disabled={!pickSchool}
+                  className="min-h-[44px] rounded-[8px] border border-line-strong bg-surface px-3 py-2.5 text-[15px] text-ink disabled:bg-surface-sunken disabled:text-ink-muted"
+                >
+                  <option value="">{pickSchool ? 'Choose a class' : 'Choose a school first'}</option>
+                  {classOptions.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
             {matches.length > 0 && (
               <ul className="flex flex-col divide-y divide-line rounded-[8px] border border-line">
                 {matches.map((s) => (

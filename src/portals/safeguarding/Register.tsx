@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { useApp } from '@/context/AppContext';
 import { studentName, staffName, canReadCase } from '@/lib/selectors';
 import { daysBetween, lastMovementAt } from '@/lib/safeguarding';
+import { SCHOOL_TIERS, classesBySchool, schoolTier, type SchoolTier } from '@/lib/school';
 import type { Case } from '@/lib/types';
 import { PageHeader } from '@/components/PageHeader';
 import { DataTable, type Column } from '@/components/ui/DataTable';
@@ -25,7 +26,12 @@ export function Register() {
   const [status, setStatus] = useState('');
   const [owner, setOwner] = useState('');
   const [category, setCategory] = useState('');
+  const [school, setSchool] = useState<SchoolTier | ''>('');
+  const [tutorGroup, setTutorGroup] = useState('');
   const [savedViews, setSavedViews] = useState<string[]>([]);
+
+  const classMap = useMemo(() => classesBySchool(state.students), [state.students]);
+  const classOptions = school ? (classMap.get(school) ?? []) : [];
 
   const readableCases = useMemo(
     () =>
@@ -43,6 +49,9 @@ export function Register() {
     if (status && c.status !== status) return false;
     if (owner && c.ownerId !== owner) return false;
     if (category && c.category !== category) return false;
+    const student = state.students.find((s) => s.id === c.studentId);
+    if (school && (!student || schoolTier(student.yearGroup) !== school)) return false;
+    if (tutorGroup && student?.tutorGroup !== tutorGroup) return false;
     return true;
   });
 
@@ -85,6 +94,8 @@ export function Register() {
     status && { key: 'status', label: status, onRemove: () => setStatus('') },
     owner && { key: 'owner', label: staffName(state.staff.find((s) => s.id === owner)), onRemove: () => setOwner('') },
     category && { key: 'category', label: category, onRemove: () => setCategory('') },
+    school && { key: 'school', label: school, onRemove: () => { setSchool(''); setTutorGroup(''); } },
+    tutorGroup && { key: 'class', label: tutorGroup, onRemove: () => setTutorGroup('') },
   ].filter(Boolean) as { key: string; label: string; onRemove: () => void }[];
 
   if (permissions.safeguarding === 'none') return <LockedPortal portal="Safeguarding" />;
@@ -142,6 +153,16 @@ export function Register() {
         />
         <FilterSelect label="Owner" value={owner} onChange={setOwner} options={owners.map((o) => ({ value: o.id, label: staffName(o) }))} />
         <FilterSelect label="Category" value={category} onChange={setCategory} options={categories.map((c) => ({ value: c, label: c }))} />
+        <FilterSelect
+          label="School"
+          value={school}
+          onChange={(v) => {
+            setSchool(v as SchoolTier | '');
+            setTutorGroup('');
+          }}
+          options={SCHOOL_TIERS.map((t) => ({ value: t, label: t }))}
+        />
+        <FilterSelect label="Class" value={tutorGroup} onChange={setTutorGroup} options={classOptions.map((c) => ({ value: c, label: c }))} />
       </FilterBar>
 
       {rows.length === 0 ? (

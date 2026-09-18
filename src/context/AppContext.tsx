@@ -49,6 +49,17 @@ interface AppState {
   currentUserId: string;
   clockOffsetDays: number;
   seq: number;
+  attendanceMarks: Record<string, AttendanceMark>;
+}
+
+export type AttendanceStatus = 'present' | 'late' | 'absent' | 'authorised';
+
+export interface AttendanceMark {
+  studentId: string;
+  dateKey: string;
+  status: AttendanceStatus;
+  markedById: string;
+  markedAt: string;
 }
 
 function initialState(): AppState {
@@ -68,7 +79,12 @@ function initialState(): AppState {
     currentUserId: 'staff-emily-carter',
     clockOffsetDays: 0,
     seq: 5000,
+    attendanceMarks: {},
   };
+}
+
+export function attendanceKey(dateKey: string, studentId: string): string {
+  return `${dateKey}|${studentId}`;
 }
 
 type Action_ =
@@ -111,6 +127,7 @@ type Action_ =
   | { type: 'ACK_PATTERN_FLAG'; id: string }
   | { type: 'DISMISS_PATTERN_FLAG'; id: string; reason: string }
   | { type: 'AUTHORISE_CONTACT_EXCEPTION'; recordId: string; actorId: string }
+  | { type: 'MARK_ATTENDANCE'; studentId: string; dateKey: string; status: AttendanceStatus; actorId: string }
   | { type: 'UPDATE_SUPPORT_PLAN_GOAL'; recordId: string; goalIndex: number; status: 'on track' | 'needs attention' | 'met'; actorId: string }
   | { type: 'CLOSE_SUPPORT_PLAN'; recordId: string; actorId: string }
   | { type: 'UPDATE_REFERRAL_STATUS'; recordId: string; status: 'referred' | 'in progress' | 'completed' | 'declined'; actorId: string }
@@ -378,6 +395,18 @@ function reducer(state: AppState, action: Action_): AppState {
             : r,
         ),
       };
+    }
+    case 'MARK_ATTENDANCE': {
+      const at = nowIso(state);
+      const key = attendanceKey(action.dateKey, action.studentId);
+      const mark: AttendanceMark = {
+        studentId: action.studentId,
+        dateKey: action.dateKey,
+        status: action.status,
+        markedById: action.actorId,
+        markedAt: at,
+      };
+      return { ...state, attendanceMarks: { ...state.attendanceMarks, [key]: mark } };
     }
     case 'UPDATE_SUPPORT_PLAN_GOAL': {
       const at = nowIso(state);

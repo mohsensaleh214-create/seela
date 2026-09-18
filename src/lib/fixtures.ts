@@ -232,6 +232,18 @@ const LAST_NAMES = [
   'Barakat', 'Nasser', 'Idris', 'Karim', 'Hadi', 'Aziz', 'Noor', 'Farah', 'Lami',
 ];
 
+// The letter each year's named/worked-example student already sits in
+// (Layla/Fatima 9G, Omar 7B, Sophie/Grace 11S, Yusuf 5R, Hana 10N, Daniel 8K,
+// Ibrahim 6H), so filler students land in the same tutor groups and those
+// classes look like real, populated classes in Registration rather than a
+// class of one.
+const NAMED_LETTER_BY_YEAR: Record<number, string> = { 5: 'R', 6: 'H', 7: 'B', 8: 'K', 9: 'G', 10: 'N', 11: 'S' };
+
+function lettersForYear(year: number): [string, string] {
+  const named = NAMED_LETTER_BY_YEAR[year];
+  return named ? [named, 'A'] : ['A', 'B'];
+}
+
 function fillerStudents(count: number): SeedStudent[] {
   const out: SeedStudent[] = [];
   for (let i = 0; i < count; i += 1) {
@@ -239,7 +251,8 @@ function fillerStudents(count: number): SeedStudent[] {
     const last = LAST_NAMES[(i * 3 + 1) % LAST_NAMES.length];
     const yearGroup = 3 + (i % 10);
     const campus: 'Girls School' | 'Boys School' = i % 2 === 0 ? 'Girls School' : 'Boys School';
-    const letter = 'ABCDE'[i % 5];
+    const round = Math.floor(i / 10);
+    const letter = lettersForYear(yearGroup)[round % 2];
     out.push({
       id: `stu-filler-${i}`,
       firstName: first,
@@ -257,7 +270,7 @@ function fillerStudents(count: number): SeedStudent[] {
   return out;
 }
 
-const ALL_SEED_STUDENTS: SeedStudent[] = [...NAMED, ...fillerStudents(31)];
+const ALL_SEED_STUDENTS: SeedStudent[] = [...NAMED, ...fillerStudents(80)];
 
 export const STUDENTS: Student[] = ALL_SEED_STUDENTS.map((s) => ({
   id: s.id,

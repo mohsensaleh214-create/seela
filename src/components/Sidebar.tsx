@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Stethoscope, HeartHandshake, ShieldAlert, Home, Plane, BarChart3, Settings, Plus, X } from 'lucide-react';
+import { Stethoscope, HeartHandshake, ShieldAlert, Home, ClipboardList, Plane, BarChart3, Settings, Plus, X } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { canEnterPortal } from '@/lib/permissions';
 import { portalSubNav } from '@/lib/nav';
@@ -53,6 +53,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       <nav aria-label="Portals" className="flex flex-col gap-0.5 px-3">
         <SidebarLink to="/" label="Today" Icon={Home} onNavigate={onNavigate} end />
+        <SidebarLink to="/registration" label="Registration" Icon={ClipboardList} onNavigate={onNavigate} />
         {portals
           .filter((p) => p.allowed)
           .map((p) => (
