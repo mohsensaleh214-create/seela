@@ -6,6 +6,7 @@ import { studentName } from '@/lib/selectors';
 import { PortalHeader } from '@/components/PortalHeader';
 import { PageHeader } from '@/components/PageHeader';
 import { LockedPortal } from '@/components/LockedPortal';
+import { StudentPicker } from '@/components/StudentPicker';
 import { Card, CardTitle } from '@/components/ui/Card';
 import { StudentChip } from '@/components/ui/StudentChip';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -27,6 +28,7 @@ export function HealthcarePlans() {
 
   const plans = state.medicalRecords.filter((m) => m.type === 'plan');
   const canWrite = permissions.medical === 'full';
+  const pickedStudent = state.students.find((s) => s.id === studentId);
 
   return (
     <>
@@ -110,21 +112,16 @@ export function HealthcarePlans() {
         }
       >
         <div className="flex flex-col gap-4">
-          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-ink-muted">
-            Student
-            <select
-              value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
-              className="rounded-[8px] border border-line-strong bg-surface px-3 py-2.5 text-[15px] text-ink min-h-[44px]"
-            >
-              <option value="">Choose a student</option>
-              {state.students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {studentName(s)} — Year {s.yearGroup}
-                </option>
-              ))}
-            </select>
-          </label>
+          {pickedStudent ? (
+            <div className="flex items-center justify-between rounded-[8px] bg-surface-sunken px-3 py-2.5">
+              <StudentChip student={pickedStudent} />
+              <button type="button" onClick={() => setStudentId('')} className="text-[13px] font-medium text-ink-muted underline">
+                Change
+              </button>
+            </div>
+          ) : (
+            <StudentPicker onSelect={(s) => setStudentId(s.id)} autoFocusSearch />
+          )}
           <TextField label="Condition" value={description} onChange={(e) => setDescription(e.target.value)} required />
           <TextAreaField label="What staff need to do" hint="Plain language — this becomes the emergency protocol" value={protocol} onChange={(e) => setProtocol(e.target.value)} />
           <DateField label="Review date" value={reviewDate} onChange={(e) => setReviewDate(e.target.value)} />

@@ -1,17 +1,19 @@
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { HeartHandshake } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { studentName } from '@/lib/selectors';
 import { PortalHeader } from '@/components/PortalHeader';
 import { PageHeader } from '@/components/PageHeader';
 import { LockedPortal } from '@/components/LockedPortal';
+import { StudentPicker } from '@/components/StudentPicker';
 import { Card } from '@/components/ui/Card';
 import { StudentChip } from '@/components/ui/StudentChip';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { TextField, TextAreaField, SelectField } from '@/components/ui/FormField';
+import { TextAreaField, SelectField } from '@/components/ui/FormField';
 import { useToast } from '@/components/ui/Toast';
 
 function staffYearGroup(jobTitle: string): number | null {
@@ -42,7 +44,56 @@ export function WellbeingOverview() {
     [state.wellbeingRecords, permissions.wellbeing, ownYear],
   );
 
-  if (permissions.wellbeing !== 'own-year-full' && permissions.wellbeing !== 'full') return <LockedPortal portal="Wellbeing" />;
+  if (permissions.wellbeing === 'none') {
+    return (
+      <LockedPortal
+        portal="Wellbeing"
+        note="You can still add a note or raise a concern about a student's wellbeing at any time — it goes straight to the pastoral team."
+      />
+    );
+  }
+
+  if (permissions.wellbeing === 'own-students-summary') {
+    const myStudents = state.students.filter((s) => (currentUser.homeroomOf ?? []).includes(s.tutorGroup));
+    return (
+      <>
+        <PortalHeader
+          portal="wellbeing"
+          title="Wellbeing — your class"
+          description="A summary for your own students. Full notes and session detail are visible to the pastoral team."
+        />
+        {myStudents.length === 0 ? (
+          <EmptyState icon={HeartHandshake} title="No class assigned" body="You are not set as form tutor for any class." />
+        ) : (
+          <div className="flex flex-col gap-3">
+            {myStudents.map((s) => {
+              const activePlan = state.wellbeingRecords.some((r) => r.studentId === s.id && r.type === 'support-plan' && r.planStatus === 'active');
+              const lastCheckIn = [...state.wellbeingRecords]
+                .filter((r) => r.studentId === s.id && r.mood)
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+              return (
+                <Card key={s.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+                  <StudentChip student={s} linkTo={`/students/${s.id}`} />
+                  <div className="flex flex-wrap items-center gap-2 text-[13px]">
+                    {activePlan && <span className="rounded-full bg-wellbeing-tint px-2 py-0.5 font-medium text-wellbeing-deep">Active support plan</span>}
+                    {lastCheckIn?.mood && (
+                      <span className="text-ink-muted">
+                        Last mood: {MOOD_LABEL[lastCheckIn.mood]} · {format(new Date(lastCheckIn.createdAt), 'd MMM')}
+                      </span>
+                    )}
+                    {!activePlan && !lastCheckIn && <span className="text-ink-muted">Nothing on file</span>}
+                    <Link to={`/students/${s.id}?tab=wellbeing`} className="font-medium text-wellbeing hover:underline">
+                      Add a note
+                    </Link>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </>
+    );
+  }
 
   return (
     <>
@@ -88,21 +139,13 @@ export function WellbeingOverview() {
 function LogConversationModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { state, currentUser, dispatch, logAudit } = useApp();
   const { show } = useToast();
-  const [query, setQuery] = useState('');
   const [studentId, setStudentId] = useState('');
   const [summary, setSummary] = useState('');
   const [mood, setMood] = useState<'low' | 'mixed' | 'positive'>('mixed');
 
-  const matches = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (q.length < 2) return [];
-    return state.students.filter((s) => studentName(s).toLowerCase().includes(q)).slice(0, 6);
-  }, [query, state.students]);
-
   const student = state.students.find((s) => s.id === studentId);
 
   function reset() {
-    setQuery('');
     setStudentId('');
     setSummary('');
     setMood('mixed');
@@ -146,20 +189,7 @@ function LogConversationModal({ open, onClose }: { open: boolean; onClose: () =>
     >
       <div className="flex flex-col gap-4">
         {!student ? (
-          <>
-            <TextField label="Student" hint="Type two or three letters of a name" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus />
-            {matches.length > 0 && (
-              <ul className="flex flex-col divide-y divide-line rounded-[8px] border border-line">
-                {matches.map((s) => (
-                  <li key={s.id}>
-                    <button type="button" onClick={() => setStudentId(s.id)} className="flex w-full px-3 py-2 text-left hover:bg-surface-sunken">
-                      <StudentChip student={s} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </>
+          <StudentPicker onSelect={(s) => setStudentId(s.id)} autoFocusSearch />
         ) : (
           <div className="flex items-center justify-between rounded-[8px] bg-surface-sunken px-3 py-2">
             <StudentChip student={student} />

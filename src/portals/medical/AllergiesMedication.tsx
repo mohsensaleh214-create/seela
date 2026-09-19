@@ -3,11 +3,10 @@ import { AlertTriangle } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { studentName } from '@/lib/selectors';
 import type { AllergyCategory } from '@/lib/types';
-
-const ALLERGY_CATEGORIES: AllergyCategory[] = ['Food', 'Insect sting', 'Medication', 'Environmental', 'Latex', 'Other'];
 import { PortalHeader } from '@/components/PortalHeader';
 import { PageHeader } from '@/components/PageHeader';
 import { LockedPortal } from '@/components/LockedPortal';
+import { StudentPicker } from '@/components/StudentPicker';
 import { Card, CardTitle } from '@/components/ui/Card';
 import { StudentChip } from '@/components/ui/StudentChip';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -17,13 +16,27 @@ import { Modal } from '@/components/ui/Modal';
 import { TextField, TextAreaField, SelectField } from '@/components/ui/FormField';
 import { useToast } from '@/components/ui/Toast';
 
+const ALLERGY_CATEGORIES: AllergyCategory[] = ['Food', 'Insect sting', 'Medication', 'Environmental', 'Latex', 'Other'];
+
+/** Common, named allergens per category — a dropdown first, so the same allergen is always spelled and tagged the same way across the whole school (which is what makes the trends dashboard meaningful). */
+const COMMON_ALLERGENS: Record<AllergyCategory, string[]> = {
+  Food: ['Peanuts', 'Tree nuts', 'Milk / dairy', 'Eggs', 'Wheat / gluten', 'Soy', 'Shellfish', 'Fish', 'Sesame'],
+  'Insect sting': ['Bee stings', 'Wasp stings', 'Ant stings'],
+  Medication: ['Penicillin', 'Ibuprofen / NSAIDs', 'Aspirin', 'Sulfa drugs'],
+  Environmental: ['Pollen', 'Dust mites', 'Pet dander', 'Mould'],
+  Latex: ['Latex'],
+  Other: [],
+};
+const OTHER_ALLERGEN = 'Other / not listed';
+
 export function AllergiesMedication() {
   const { state, currentUser, permissions, dispatch, logAudit } = useApp();
   const { show } = useToast();
   const [adding, setAdding] = useState(false);
   const [studentId, setStudentId] = useState('');
   const [category, setCategory] = useState<AllergyCategory>('Food');
-  const [description, setDescription] = useState('');
+  const [allergen, setAllergen] = useState('');
+  const [customAllergen, setCustomAllergen] = useState('');
   const [severity, setSeverity] = useState<'mild' | 'moderate' | 'severe'>('moderate');
   const [protocol, setProtocol] = useState('');
   const [medName, setMedName] = useState('');
@@ -34,6 +47,8 @@ export function AllergiesMedication() {
 
   const allergies = state.medicalRecords.filter((m) => m.type === 'allergy');
   const canWrite = permissions.medical === 'full';
+  const pickedStudent = state.students.find((s) => s.id === studentId);
+  const finalAllergen = allergen === OTHER_ALLERGEN ? customAllergen.trim() : allergen;
 
   return (
     <>
@@ -99,7 +114,7 @@ export function AllergiesMedication() {
           <Button
             variant="primary"
             portal="medical"
-            disabled={!studentId || !description}
+            disabled={!studentId || !finalAllergen}
             onClick={() => {
               const s = state.students.find((st) => st.id === studentId);
               if (!s) return;
@@ -111,7 +126,7 @@ export function AllergiesMedication() {
                   type: 'allergy',
                   allergyCategory: category,
                   severity,
-                  description,
+                  description: finalAllergen,
                   protocol,
                   medicationName: medName || undefined,
                   medicationDose: medDose || undefined,
@@ -128,7 +143,8 @@ export function AllergiesMedication() {
               show('Allergy record saved.');
               setStudentId('');
               setCategory('Food');
-              setDescription('');
+              setAllergen('');
+              setCustomAllergen('');
               setProtocol('');
               setMedName('');
               setMedDose('');
@@ -141,26 +157,25 @@ export function AllergiesMedication() {
         }
       >
         <div className="flex flex-col gap-4">
-          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-ink-muted">
-            Student
-            <select
-              value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
-              className="rounded-[8px] border border-line-strong bg-surface px-3 py-2.5 text-[15px] text-ink min-h-[44px]"
-            >
-              <option value="">Choose a student</option>
-              {state.students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {studentName(s)} — Year {s.yearGroup}
-                </option>
-              ))}
-            </select>
-          </label>
+          {pickedStudent ? (
+            <div className="flex items-center justify-between rounded-[8px] bg-surface-sunken px-3 py-2.5">
+              <StudentChip student={pickedStudent} />
+              <button type="button" onClick={() => setStudentId('')} className="text-[13px] font-medium text-ink-muted underline">
+                Change
+              </button>
+            </div>
+          ) : (
+            <StudentPicker onSelect={(s) => setStudentId(s.id)} autoFocusSearch />
+          )}
           <SelectField
             label="Allergy type"
             hint="A tag, so allergies can be seen as trends across the school, not just one record at a time"
             value={category}
-            onChange={(e) => setCategory(e.target.value as AllergyCategory)}
+            onChange={(e) => {
+              setCategory(e.target.value as AllergyCategory);
+              setAllergen('');
+              setCustomAllergen('');
+            }}
           >
             {ALLERGY_CATEGORIES.map((c) => (
               <option key={c} value={c}>
@@ -168,7 +183,18 @@ export function AllergiesMedication() {
               </option>
             ))}
           </SelectField>
-          <TextField label="Specific allergen" hint="e.g. Peanuts, Penicillin, Bee stings" value={description} onChange={(e) => setDescription(e.target.value)} required />
+          <SelectField label="Specific allergen" value={allergen} onChange={(e) => setAllergen(e.target.value)} required>
+            <option value="">Choose an allergen</option>
+            {COMMON_ALLERGENS[category].map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+            <option value={OTHER_ALLERGEN}>{OTHER_ALLERGEN}</option>
+          </SelectField>
+          {allergen === OTHER_ALLERGEN && (
+            <TextField label="Name the allergen" value={customAllergen} onChange={(e) => setCustomAllergen(e.target.value)} required autoFocus />
+          )}
           <SelectField label="Severity" value={severity} onChange={(e) => setSeverity(e.target.value as typeof severity)}>
             <option value="mild">Mild</option>
             <option value="moderate">Moderate</option>

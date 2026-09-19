@@ -147,6 +147,23 @@ export function canEnterPortal(role: Role, portal: Portal): boolean {
   return canReadPortalTab(role, portal);
 }
 
+/**
+ * Whether a role sees the portal as a destination at all — the sidebar link,
+ * the front-and-center card on Today. Every role sees Safeguarding: raising
+ * a concern into it is universal, so the entry point should be too, even for
+ * a role that can never browse the register (canReadPortalTab handles that
+ * narrower question once they're inside). Medical/Wellbeing follow whether
+ * the role has any access, including the scoped 'own-students-summary' tier
+ * — that tier gets a real, own-class landing page instead of the school-wide
+ * view, not a locked wall it can't do anything from.
+ */
+export function canSeePortalEntry(role: Role, portal: Portal): boolean {
+  if (portal === 'safeguarding') return true;
+  const p = perms(role);
+  if (portal === 'medical') return p.medical !== 'none';
+  return p.wellbeing !== 'none';
+}
+
 export function canSeeStudentSafeguarding(
   role: Role,
   opts: { isAssignedOwner: boolean; sameCampus: boolean },

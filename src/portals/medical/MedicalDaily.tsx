@@ -11,10 +11,54 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { LogVisitModal } from './LogVisitModal';
 
 export function MedicalDaily() {
-  const { state, permissions, now } = useApp();
+  const { state, currentUser, permissions, now } = useApp();
   const [logging, setLogging] = useState(false);
 
-  if (permissions.medical !== 'summary' && permissions.medical !== 'full') return <LockedPortal portal="Medical" />;
+  if (permissions.medical === 'none') {
+    return (
+      <LockedPortal
+        portal="Medical"
+        note="You can still raise a concern about a student's health at any time — it goes straight to the medical team."
+      />
+    );
+  }
+
+  if (permissions.medical === 'own-students-summary') {
+    const myStudents = state.students.filter((s) => (currentUser.homeroomOf ?? []).includes(s.tutorGroup));
+    return (
+      <>
+        <PortalHeader
+          portal="medical"
+          title="Medical — your class"
+          description="A summary for your own students. Full protocols and dosages are visible to the school nurse and senior DSL."
+        />
+        {myStudents.length === 0 ? (
+          <EmptyState icon={Stethoscope} title="No class assigned" body="You are not set as form tutor for any class." />
+        ) : (
+          <div className="flex flex-col gap-3">
+            {myStudents.map((s) => {
+              const allergies = state.medicalRecords.filter((m) => m.studentId === s.id && m.type === 'allergy');
+              const hasPlan = state.medicalRecords.some((m) => m.studentId === s.id && m.type === 'plan');
+              return (
+                <Card key={s.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+                  <StudentChip student={s} linkTo={`/students/${s.id}`} />
+                  <div className="flex flex-wrap items-center gap-2 text-[13px]">
+                    {allergies.map((a) => (
+                      <span key={a.id} className="rounded-full bg-medical-tint px-2 py-0.5 font-medium text-medical-deep">
+                        {a.allergyCategory ?? 'Allergy'}
+                      </span>
+                    ))}
+                    {hasPlan && <span className="rounded-full bg-medical-tint px-2 py-0.5 font-medium text-medical-deep">Healthcare plan</span>}
+                    {allergies.length === 0 && !hasPlan && <span className="text-ink-muted">Nothing on file</span>}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </>
+    );
+  }
 
   const todayVisits = useMemo(
     () =>

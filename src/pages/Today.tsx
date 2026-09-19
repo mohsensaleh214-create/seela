@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { AlertCircle, Clock3, Sparkles, Stethoscope, HeartHandshake, ShieldAlert, type LucideIcon } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
-import { canEnterPortal } from '@/lib/permissions';
+import { canSeePortalEntry } from '@/lib/permissions';
 import { tone } from '@/lib/portal-theme';
 import { EmptyState } from '@/components/ui/EmptyState';
 
@@ -24,7 +24,7 @@ interface PortalCard {
 }
 
 export function Today() {
-  const { state, currentUser, now, notifications } = useApp();
+  const { state, currentUser, permissions, now, notifications } = useApp();
 
   const overdue = notifications.filter((n) => n.category === 'overdue');
   const dueToday = notifications.filter((n) => n.category === 'due-today');
@@ -34,42 +34,54 @@ export function Today() {
 
   const portalCards = useMemo(() => {
     const cards: PortalCard[] = [];
-    if (canEnterPortal(currentUser.role, 'wellbeing')) {
-      const active = state.wellbeingRecords.filter((r) => r.type === 'support-plan' && r.planStatus === 'active').length;
+    const myClassIds = new Set(state.students.filter((s) => (currentUser.homeroomOf ?? []).includes(s.tutorGroup)).map((s) => s.id));
+    const scopedToOwnClass = { medical: permissions.medical === 'own-students-summary', wellbeing: permissions.wellbeing === 'own-students-summary' };
+
+    if (canSeePortalEntry(currentUser.role, 'wellbeing')) {
+      const activeRecords = state.wellbeingRecords.filter((r) => r.type === 'support-plan' && r.planStatus === 'active');
+      const active = scopedToOwnClass.wellbeing ? activeRecords.filter((r) => myClassIds.has(r.studentId)).length : activeRecords.length;
       cards.push({
         key: 'wellbeing',
         label: 'Wellbeing',
         to: '/wellbeing',
-        stat: `${active} active support plan${active === 1 ? '' : 's'}`,
+        stat: scopedToOwnClass.wellbeing
+          ? `${active} active support plan${active === 1 ? '' : 's'} in your class`
+          : `${active} active support plan${active === 1 ? '' : 's'}`,
         needsAttention: 0,
         Icon: HeartHandshake,
       });
     }
-    if (canEnterPortal(currentUser.role, 'safeguarding')) {
+    if (canSeePortalEntry(currentUser.role, 'safeguarding')) {
       const mine = state.cases.filter((c) => c.status === 'open' && c.ownerId === currentUser.id);
       cards.push({
         key: 'safeguarding',
         label: 'Safeguarding',
         to: '/safeguarding',
-        stat: `${mine.length} open case${mine.length === 1 ? '' : 's'} in your caseload`,
+        stat:
+          permissions.safeguarding === 'none'
+            ? 'Raise a concern any time'
+            : `${mine.length} open case${mine.length === 1 ? '' : 's'} in your caseload`,
         needsAttention: overdue.length + dueToday.length,
         Icon: ShieldAlert,
       });
     }
-    if (canEnterPortal(currentUser.role, 'medical')) {
-      const flagged = state.medicalRecords.filter((m) => m.type === 'allergy' || m.type === 'plan').length;
+    if (canSeePortalEntry(currentUser.role, 'medical')) {
+      const flaggedRecords = state.medicalRecords.filter((m) => m.type === 'allergy' || m.type === 'plan');
+      const flagged = scopedToOwnClass.medical ? flaggedRecords.filter((m) => myClassIds.has(m.studentId)).length : flaggedRecords.length;
       cards.push({
         key: 'medical',
         label: 'Medical',
         to: '/medical',
-        stat: `${flagged} student${flagged === 1 ? '' : 's'} with an allergy or healthcare plan`,
+        stat: scopedToOwnClass.medical
+          ? `${flagged} student${flagged === 1 ? '' : 's'} in your class with an allergy or healthcare plan`
+          : `${flagged} student${flagged === 1 ? '' : 's'} with an allergy or healthcare plan`,
         needsAttention: 0,
         Icon: Stethoscope,
       });
     }
     return cards;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.cases, state.medicalRecords, state.wellbeingRecords, currentUser, overdue.length, dueToday.length]);
+  }, [state.cases, state.medicalRecords, state.wellbeingRecords, state.students, currentUser, permissions, overdue.length, dueToday.length]);
 
   return (
     <div className="mx-auto flex w-full max-w-[900px] flex-col gap-8">

@@ -310,6 +310,41 @@ Three controls, all clearly marked, so a live walkthrough never touches real sta
   medical section, pastoral-lead/DSL/senior-DSL see both, giving each
   "super-admin" role dashboard content specific to their own area rather
   than everyone seeing an identical, safeguarding-only Reporting page.
+  The common allergens themselves are also a dropdown per category
+  (`COMMON_ALLERGENS` in `AllergiesMedication.tsx`), with an "Other / not
+  listed" escape hatch — a named allergen is always spelled and tagged the
+  same way across the school, which is what makes the trend chart mean
+  anything, rather than "Peanut", "peanuts" and "Peanut allergy" landing as
+  three different bars.
+- **A student picker that scales, everywhere it was still a flat dropdown.**
+  Healthcare plans and allergy records made you find one student inside a
+  single `<select>` of the entire school — unusable past a couple of
+  classes, and the one place in the app still doing this after Registration,
+  House points and Raise a concern had already moved to school → class →
+  type-to-search. Extracted that pattern into one shared `StudentPicker`
+  (`src/components/StudentPicker.tsx`) and used it in both modals, and in
+  the wellbeing "log a conversation" modal which had its own third variant
+  (search-only, no class browse).
+- **The three portals, visible to everyone — because every role can feed
+  into all three.** Teachers had no Safeguarding or Wellbeing nav entry at
+  all, and no home-page card for either: `canEnterPortal` (whether a role
+  can browse the school-wide list) was quietly being used to decide whether
+  the *destination itself* should be visible, so a role with no browsing
+  rights saw nothing to click, not even a place to land. Split this into two
+  questions: `canReadPortalTab` (unchanged — governs the whole-school list)
+  and a new `canSeePortalEntry` (`src/lib/permissions.ts`), which is true for
+  Safeguarding for every role (raising a concern is universal) and for
+  Medical/Wellbeing wherever the role has any access at all, including the
+  scoped teacher tier. Clicking through now always lands somewhere useful
+  instead of a wall: Safeguarding shows a "you can't browse this, but here's
+  Raise a concern" explainer (`LockedPortal`, now with that CTA rather than
+  just a locked banner); Medical and Wellbeing show a real "your class"
+  landing (own homeroom students, allergy/support-plan tags, a way to add a
+  wellbeing note) instead of the whole-school view they can't have. The
+  Today portal cards and each portal's own sub-navigation follow the same
+  split, so a teacher's Medical sub-nav no longer offers "Healthcare plans"
+  and "Allergies and medication" — links that only led to the wall they'd
+  just been shown a better version of on the index page.
 
 ## What's intentionally not here
 

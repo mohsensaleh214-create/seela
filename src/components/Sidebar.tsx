@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { Stethoscope, HeartHandshake, ShieldAlert, Home, ClipboardList, Plane, BarChart3, Settings, Plus, X, Eye, Trophy } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
-import { canEnterPortal } from '@/lib/permissions';
+import { canSeePortalEntry } from '@/lib/permissions';
 import { portalSubNav } from '@/lib/nav';
 import { PersonAvatar } from '@/components/ui/PersonAvatar';
 import { RoleSwitcher } from '@/components/RoleSwitcher';
@@ -14,14 +14,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
 
   const portals = [
-    { key: 'medical', label: 'Medical', to: '/medical', Icon: Stethoscope, allowed: canEnterPortal(currentUser.role, 'medical') },
-    { key: 'wellbeing', label: 'Wellbeing', to: '/wellbeing', Icon: HeartHandshake, allowed: canEnterPortal(currentUser.role, 'wellbeing') },
+    { key: 'medical', label: 'Medical', to: '/medical', Icon: Stethoscope, allowed: canSeePortalEntry(currentUser.role, 'medical') },
+    { key: 'wellbeing', label: 'Wellbeing', to: '/wellbeing', Icon: HeartHandshake, allowed: canSeePortalEntry(currentUser.role, 'wellbeing') },
     {
       key: 'safeguarding',
       label: 'Safeguarding',
       to: '/safeguarding',
       Icon: ShieldAlert,
-      allowed: canEnterPortal(currentUser.role, 'safeguarding'),
+      allowed: canSeePortalEntry(currentUser.role, 'safeguarding'),
     },
   ] as const;
 
