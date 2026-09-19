@@ -9,6 +9,7 @@ const PORTAL_OPTIONS = [
   { value: 'medical', label: 'Medical' },
   { value: 'wellbeing', label: 'Wellbeing' },
   { value: 'safeguarding', label: 'Safeguarding' },
+  { value: 'communication', label: 'Communication' },
 ];
 
 const SIGNIFICANT_TYPES = new Set([
@@ -23,6 +24,8 @@ const SIGNIFICANT_TYPES = new Set([
   'Support plan',
   'Counselling',
   'System flag',
+  'Home contact logged',
+  'Home contact · auto-captured',
 ]);
 
 export function TimelineTab({

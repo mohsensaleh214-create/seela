@@ -15,6 +15,10 @@ import type {
   House,
   HousePointAward,
   HousePointReason,
+  HomeContact,
+  HomeContactChannel,
+  HomeContactDirection,
+  HomeContactSource,
 } from './types';
 
 const HOUSES: House[] = ['Safa', 'Marwa', 'Arafat'];
@@ -955,6 +959,89 @@ export const HOUSE_POINT_AWARDS: HousePointAward[] = [
   award(sid('daniel-okoro'), 3, 'Effort', 'staff-tom-reilly', fromAnchor(-1, 9, 50)),
   award('stu-filler-11', 5, 'Achievement', 'staff-priya-nair', fromAnchor(-1, 16, 0)),
   award(sid('fatima-zahra'), 3, 'Kindness', 'staff-dan-whitfield', fromAnchor(0, 8, 45)),
+];
+
+// ---------------------------------------------------------------------------
+// Home contacts — portal-agnostic evidence of contact with home, no case needed
+// ---------------------------------------------------------------------------
+
+function homeContact(
+  studentId: string,
+  channel: HomeContactChannel,
+  direction: HomeContactDirection,
+  personSpoken: string,
+  relationship: string,
+  subject: string,
+  summary: string,
+  loggedById: string,
+  at: string,
+  source: HomeContactSource = 'logged',
+): HomeContact {
+  return {
+    id: id('homecontact'),
+    studentId,
+    channel,
+    direction,
+    contactedAt: at,
+    loggedById,
+    personSpoken,
+    relationship,
+    subject,
+    summary,
+    source,
+    ...meta(loggedById, at),
+  };
+}
+
+export const HOME_CONTACTS: HomeContact[] = [
+  homeContact(
+    sid('sophie-brennan'),
+    'email',
+    'outbound',
+    'Claire Brennan',
+    'Mother',
+    'Checking in after this week',
+    'Sent a short note letting Claire know Sophie seemed brighter this week and thanking her for keeping in touch.',
+    'staff-tom-reilly',
+    fromAnchor(-3, 8, 30),
+    'logged',
+  ),
+  homeContact(
+    sid('sophie-brennan'),
+    'email',
+    'inbound',
+    'Claire Brennan',
+    'Mother',
+    'Re: Checking in after this week',
+    'Auto-captured from the school mailbox — matched to Sophie Brennan by parent email address. Claire thanked Tom and confirmed things are calmer at home this week.',
+    'staff-tom-reilly',
+    fromAnchor(-3, 17, 5),
+    'auto-captured',
+  ),
+  homeContact(
+    sid('omar-haddad'),
+    'phone',
+    'outbound',
+    'Yousef Haddad',
+    'Father',
+    'Missed medication reminder',
+    'Called to remind that Omar’s inhaler needs to come back into school after half term.',
+    'staff-priya-nair',
+    fromAnchor(-2, 12, 40),
+    'logged',
+  ),
+  homeContact(
+    sid('grace-thompson'),
+    'email',
+    'inbound',
+    'Michael Thompson',
+    'Father',
+    'Re: Trip consent form',
+    'Auto-captured from the school mailbox — matched to Grace Thompson by parent email address. Michael confirmed the signed consent form is on its way in.',
+    'staff-sarah-ahmed',
+    fromAnchor(-1, 19, 15),
+    'auto-captured',
+  ),
 ];
 
 export const SEED_SEQUENCE = seq;

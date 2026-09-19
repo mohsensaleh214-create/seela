@@ -8,13 +8,17 @@ import type {
   Student,
   Staff,
   Portal,
+  HomeContact,
 } from './types';
 import type { RolePermissions } from './permissions';
 import { canReadCase, sameCampus } from './selectors';
 
+/** Timeline entries can carry one extra, non-routable value for portal-agnostic home-contact evidencing. Never used outside the timeline/theme display layer — portal routing stays strictly `Portal`. */
+export type TimelinePortal = Portal | 'communication';
+
 export interface TimelineItem {
   id: string;
-  portal: Portal;
+  portal: TimelinePortal;
   typeLabel: string;
   summary: string;
   detail?: string;
@@ -38,6 +42,7 @@ export interface TimelineSourceState {
   medicalRecords: MedicalRecord[];
   wellbeingRecords: WellbeingRecord[];
   patternFlags: PatternFlagState[];
+  homeContacts: HomeContact[];
 }
 
 const ENTRY_LABEL: Record<Entry['type'], string> = {
@@ -183,6 +188,20 @@ export function buildStudentTimeline(
       at: w.createdAt,
       restricted: !(perm.wellbeing !== 'none') || !wellbeingReadable,
       linkTo: wellbeingReadable ? `/students/${student.id}?tab=wellbeing` : undefined,
+    });
+  }
+
+  for (const hc of source.homeContacts.filter((h) => h.studentId === student.id)) {
+    const directionWord = hc.direction === 'outbound' ? 'To' : 'From';
+    items.push({
+      id: hc.id,
+      portal: 'communication',
+      typeLabel: hc.source === 'auto-captured' ? 'Home contact · auto-captured' : 'Home contact logged',
+      summary: `${directionWord} ${hc.personSpoken} (${hc.relationship}) by ${hc.channel}${hc.subject ? ` — ${hc.subject}` : ''}`,
+      detail: hc.summary,
+      authorId: hc.loggedById,
+      at: hc.contactedAt,
+      restricted: false,
     });
   }
 

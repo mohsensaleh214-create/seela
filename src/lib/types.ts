@@ -140,6 +140,29 @@ export interface ContactRecord extends WithMeta {
   alternativeAction?: string;
 }
 
+export type HomeContactChannel = 'email' | 'phone' | 'in-person' | 'video call';
+export type HomeContactDirection = 'outbound' | 'inbound';
+/** 'logged' = staff confirmed a one-click add-in style prompt. 'auto-captured' = matched from a watched mailbox with no staff action at all. */
+export type HomeContactSource = 'logged' | 'auto-captured';
+
+/**
+ * A portal-agnostic record of contact with home, independent of any case.
+ * Exists so ordinary staff-to-parent email/phone follow-ups (which iSAMS
+ * never sees past the first outbound message) still end up evidenced somewhere.
+ */
+export interface HomeContact extends WithMeta {
+  studentId: string;
+  channel: HomeContactChannel;
+  direction: HomeContactDirection;
+  contactedAt: string;
+  loggedById: string;
+  personSpoken: string;
+  relationship: string;
+  subject: string;
+  summary: string;
+  source: HomeContactSource;
+}
+
 export type MedicalRecordType = 'condition' | 'allergy' | 'medication' | 'visit' | 'plan';
 export type Severity = 'mild' | 'moderate' | 'severe';
 
@@ -197,7 +220,7 @@ export interface AuditEvent {
   id: string;
   actorId: string;
   action: AuditAction;
-  entityType: 'student' | 'case' | 'medical-record' | 'wellbeing-record' | 'audit-log' | 'report' | 'permissions' | 'house-points';
+  entityType: 'student' | 'case' | 'medical-record' | 'wellbeing-record' | 'audit-log' | 'report' | 'permissions' | 'house-points' | 'home-contact';
   entityId: string;
   entityLabel: string;
   at: string;

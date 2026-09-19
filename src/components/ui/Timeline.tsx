@@ -11,6 +11,7 @@ const PORTAL_DOT: Record<TimelineItem['portal'], string> = {
   medical: 'bg-medical',
   wellbeing: 'bg-wellbeing',
   safeguarding: 'bg-safeguarding',
+  communication: 'bg-info',
 };
 
 export function Timeline({

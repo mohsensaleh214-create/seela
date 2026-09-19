@@ -1,6 +1,6 @@
 import type { Portal } from './types';
 
-export type ThemeKey = Portal | 'neutral';
+export type ThemeKey = Portal | 'neutral' | 'communication';
 
 export interface PortalTone {
   accent: string;
@@ -58,6 +58,17 @@ const TONES: Record<ThemeKey, PortalTone> = {
     text: 'text-ink',
     textOn: 'text-white',
     border: 'border-ink',
+  },
+  communication: {
+    accent: 'var(--color-info)',
+    accentDeep: 'var(--color-info)',
+    tint: 'var(--color-info-tint)',
+    ring: '',
+    bg: 'bg-info',
+    bgHover: 'hover:brightness-90',
+    text: 'text-info',
+    textOn: 'text-white',
+    border: 'border-info',
   },
 };
 

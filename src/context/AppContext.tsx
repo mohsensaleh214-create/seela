@@ -13,6 +13,7 @@ import {
   ACTIVITIES,
   PATTERN_FLAGS,
   HOUSE_POINT_AWARDS,
+  HOME_CONTACTS,
 } from '@/lib/fixtures';
 import { ANCHOR_DATE } from '@/lib/clock';
 import { perms } from '@/lib/permissions';
@@ -34,6 +35,7 @@ import type {
   Notification,
   HousePointAward,
   HousePointReason,
+  HomeContact,
 } from '@/lib/types';
 
 interface AppState {
@@ -55,6 +57,7 @@ interface AppState {
   attendanceMarks: Record<string, AttendanceMark>;
   dutyMode: boolean;
   housePointAwards: HousePointAward[];
+  homeContacts: HomeContact[];
 }
 
 export type AttendanceStatus = 'present' | 'late' | 'absent' | 'authorised';
@@ -87,6 +90,7 @@ function initialState(): AppState {
     attendanceMarks: {},
     dutyMode: false,
     housePointAwards: HOUSE_POINT_AWARDS,
+    homeContacts: HOME_CONTACTS,
   };
 }
 
@@ -137,6 +141,7 @@ type Action_ =
   | { type: 'AUTHORISE_CONTACT_EXCEPTION'; recordId: string; actorId: string }
   | { type: 'MARK_ATTENDANCE'; studentId: string; dateKey: string; status: AttendanceStatus; actorId: string }
   | { type: 'AWARD_HOUSE_POINTS'; studentId: string; points: number; reason: HousePointReason; note?: string; actorId: string }
+  | { type: 'LOG_HOME_CONTACT'; record: Omit<HomeContact, 'id' | 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>; actorId: string }
   | { type: 'UPDATE_SUPPORT_PLAN_GOAL'; recordId: string; goalIndex: number; status: 'on track' | 'needs attention' | 'met'; actorId: string }
   | { type: 'CLOSE_SUPPORT_PLAN'; recordId: string; actorId: string }
   | { type: 'UPDATE_REFERRAL_STATUS'; recordId: string; status: 'referred' | 'in progress' | 'completed' | 'declined'; actorId: string }
@@ -436,6 +441,12 @@ function reducer(state: AppState, action: Action_): AppState {
         ...withMeta(action.actorId, at),
       };
       return { ...state, housePointAwards: [...state.housePointAwards, award], seq: n };
+    }
+    case 'LOG_HOME_CONTACT': {
+      const at = nowIso(state);
+      const [recordId, n] = nextId(state, 'homecontact');
+      const record: HomeContact = { id: recordId, ...action.record, ...withMeta(action.actorId, at) };
+      return { ...state, homeContacts: [...state.homeContacts, record], seq: n };
     }
     case 'UPDATE_SUPPORT_PLAN_GOAL': {
       const at = nowIso(state);

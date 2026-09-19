@@ -222,12 +222,49 @@ Three controls, all clearly marked, so a live walkthrough never touches real sta
   ahead. It now opens straight on "what happened" with the student shown in
   a persistent header (and a "change student" link), instead of re-asking a
   question the click already answered.
+- **Home contact log (Phase 0 for the iSAMS gap).** iSAMS logs the first
+  outbound email to a parent, but every reply or follow-up call happens off
+  system, through a staff member's own inbox — so it's never evidenced.
+  Rather than building a full parent-comms/chat/video platform up front, this
+  is a deliberately smaller first step: `HomeContact` (`src/lib/types.ts`) is
+  a portal-agnostic, case-independent record any member of staff can create
+  for any student, shown on the profile's new **Home communication** card and
+  folded into the unified timeline as a fourth, non-routable
+  `TimelinePortal` value (`'communication'` — see `src/lib/timeline.ts` and
+  `src/lib/portal-theme.ts`) so it never disturbs the three real portals'
+  routing or theming.
+  A first pass at this asked staff to fill in a form after the fact, which
+  just moves the busywork rather than removing it. The real prior art —
+  CPOMS and MyConcern's Outlook/Gmail add-ins — solves this with near-zero
+  effort: one click on the email you're already looking at, versus a
+  zero-click mailbox watcher that auto-matches replies to a student by parent
+  email address. The prototype mirrors both: **Log this email** opens a
+  prefilled, one-click confirm (`source: 'logged'`); **Simulate: parent
+  replied** shows the zero-click path, landing an entry with no staff action
+  at all (`source: 'auto-captured'`), against a simulated per-student
+  logging address shown on the card. Full parent chat/video remains a
+  larger, separate bet, not attempted here.
+- **AI call prep.** Also on the Home communication card: a "Prep for this
+  call" button that synthesises points to raise, cautions, and recent
+  context from every module the current viewer already has permission to
+  see (flags, readable safeguarding cases, medical/wellbeing records if
+  granted, and the home-contact history) — see `src/lib/callPrep.ts`. It
+  reuses the exact same permission-scoped data a screen would already show
+  (`canReadCase`, `canSeeStudentGuidance`, `permissions.medical/wellbeing`)
+  rather than widening access, so a teacher never sees more through call
+  prep than they'd see anywhere else in the app — verified by switching
+  roles on the same student (a senior DSL sees the open case detail; a
+  class teacher gets a "safeguarding history you can't see — check with the
+  DSL" caution instead). It's a deterministic, rule-based synthesis, not a
+  model call: a prototype of the feature's *shape* (pull every module into
+  one briefing) rather than of natural-language generation.
 
 ## What's intentionally not here
 
 Real authentication, MIS integration, server-side file upload, email/SMS
-delivery, parent-facing screens, and AI inference — all explicitly out of scope
-in the brief. Where production would use AI to surface a pattern, this prototype
-shows a clearly labelled system flag drawn from the dummy data instead (see
-Omar Haddad's timeline), with acknowledge/dismiss actions and no wording that
-implies the system decided anything.
+delivery, parent-facing screens, and real AI inference — all explicitly out
+of scope in the brief. Where production would use AI to surface a pattern or
+prep a conversation, this prototype shows clearly labelled, rule-based
+output drawn from the dummy data instead — a system flag (see Omar Haddad's
+timeline) or the "Prep for this call" panel — with no wording that implies
+a model generated it or that the system decided anything.
