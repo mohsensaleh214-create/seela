@@ -14,7 +14,7 @@ export function MedicalDaily() {
   const { state, permissions, now } = useApp();
   const [logging, setLogging] = useState(false);
 
-  if (permissions.medical === 'none') return <LockedPortal portal="Medical" />;
+  if (permissions.medical !== 'summary' && permissions.medical !== 'full') return <LockedPortal portal="Medical" />;
 
   const todayVisits = useMemo(
     () =>

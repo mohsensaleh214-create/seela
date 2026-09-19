@@ -23,7 +23,7 @@ export function SupportPlans() {
   const [goal, setGoal] = useState('');
   const [reviewDate, setReviewDate] = useState('');
 
-  if (permissions.wellbeing === 'none') return <LockedPortal portal="Wellbeing" />;
+  if (permissions.wellbeing !== 'own-year-full' && permissions.wellbeing !== 'full') return <LockedPortal portal="Wellbeing" />;
 
   const plans = state.wellbeingRecords.filter((r) => r.type === 'support-plan');
   const active = plans.filter((p) => p.planStatus === 'active');

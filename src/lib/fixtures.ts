@@ -19,6 +19,7 @@ import type {
   HomeContactChannel,
   HomeContactDirection,
   HomeContactSource,
+  VisitCategory,
 } from './types';
 
 const HOUSES: House[] = ['Safa', 'Marwa', 'Arafat'];
@@ -640,6 +641,7 @@ export const MEDICAL_RECORDS: MedicalRecord[] = [
     id: id('med'),
     studentId: sid('layla-alotaibi'),
     type: 'allergy',
+    allergyCategory: 'Food',
     severity: 'severe',
     description: 'Severe allergy to tree nuts and peanuts. History of anaphylaxis (age 6).',
     protocol:
@@ -679,6 +681,7 @@ export const MEDICAL_RECORDS: MedicalRecord[] = [
     type: 'visit',
     description: 'Nurse visit: vague stomach pain',
     visitReason: 'Stomach ache, no other symptoms',
+    visitCategory: 'Stomach ache',
     visitTreatment: 'Rested in medical office for 20 minutes, offered water, symptoms settled',
     visitTimeIn: fromAnchor(-32, 10, 15),
     visitTimeOut: fromAnchor(-32, 10, 40),
@@ -691,6 +694,7 @@ export const MEDICAL_RECORDS: MedicalRecord[] = [
     type: 'visit',
     description: 'Nurse visit: stomach pain, sent to sit with head down',
     visitReason: 'Stomach pain, looked pale',
+    visitCategory: 'Stomach ache',
     visitTreatment: 'Rested, offered water, symptoms settled after 30 minutes',
     visitTimeIn: fromAnchor(-19, 11, 0),
     visitTimeOut: fromAnchor(-19, 11, 30),
@@ -703,6 +707,7 @@ export const MEDICAL_RECORDS: MedicalRecord[] = [
     type: 'visit',
     description: 'Nurse visit: stomach pain before period 3',
     visitReason: 'Stomach pain, said he felt "not right"',
+    visitCategory: 'Stomach ache',
     visitTreatment: 'Rested for 40 minutes. Home contacted this time given the pattern.',
     visitTimeIn: fromAnchor(-5, 9, 30),
     visitTimeOut: fromAnchor(-5, 10, 10),
@@ -712,11 +717,11 @@ export const MEDICAL_RECORDS: MedicalRecord[] = [
 ];
 
 // Four routine visits today, for the daily medical view
-const ROUTINE_TODAY = [
-  { studentKey: 'filler-2', reason: 'Headache', treatment: 'Paracetamol given with parental consent on file, rested 20 minutes' },
-  { studentKey: 'filler-5', reason: 'Grazed knee from PE', treatment: 'Cleaned and dressed' },
-  { studentKey: 'filler-9', reason: 'Feeling faint, hot day', treatment: 'Rested in shade, water given, recovered fully' },
-  { studentKey: 'filler-14', reason: 'Asthma inhaler check-in', treatment: 'Used own inhaler, breathing settled, technique checked' },
+const ROUTINE_TODAY: { studentKey: string; reason: string; category: VisitCategory; treatment: string }[] = [
+  { studentKey: 'filler-2', reason: 'Headache', category: 'Headache', treatment: 'Paracetamol given with parental consent on file, rested 20 minutes' },
+  { studentKey: 'filler-5', reason: 'Grazed knee from PE', category: 'Injury', treatment: 'Cleaned and dressed' },
+  { studentKey: 'filler-9', reason: 'Feeling faint, hot day', category: 'Illness', treatment: 'Rested in shade, water given, recovered fully' },
+  { studentKey: 'filler-14', reason: 'Asthma inhaler check-in', category: 'Medication administration', treatment: 'Used own inhaler, breathing settled, technique checked' },
 ];
 ROUTINE_TODAY.forEach((v, i) => {
   MEDICAL_RECORDS.push({
@@ -725,6 +730,7 @@ ROUTINE_TODAY.forEach((v, i) => {
     type: 'visit',
     description: v.reason,
     visitReason: v.reason,
+    visitCategory: v.category,
     visitTreatment: v.treatment,
     visitTimeIn: fromAnchor(0, 8 + i, 30),
     visitTimeOut: fromAnchor(0, 8 + i, 50),

@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Lock } from 'lucide-react';
 import type { MedicalRecord, Student } from '@/lib/types';
 import type { MedicalAccess } from '@/lib/permissions';
 import { Card, CardTitle } from '@/components/ui/Card';
@@ -14,8 +14,22 @@ export function MedicalTab({
 }: {
   student: Student;
   records: MedicalRecord[];
-  access: MedicalAccess;
+  access: MedicalAccess | 'locked';
 }) {
+  if (access === 'locked') {
+    return (
+      <Banner tone="locked">
+        <p className="flex items-center gap-1.5 font-medium">
+          <Lock size={15} aria-hidden />
+          Restricted. Contact the school nurse.
+        </p>
+        <p className="mt-1">
+          This student is outside your class. Switch on duty mode to see medical information for any student.
+        </p>
+      </Banner>
+    );
+  }
+
   if (records.length === 0) {
     return <EmptyState icon={Stethoscope} title="No medical records" body={`Nothing has been recorded for ${student.preferredName ?? student.firstName} yet.`} />;
   }
@@ -46,9 +60,13 @@ export function MedicalTab({
         </div>
       )}
 
-      {access === 'summary' && (
+      {access !== 'full' && (
         <Banner tone="info">
-          <p>You have summary access. Dosages and full protocols are visible to the school nurse and senior DSL.</p>
+          <p>
+            {access === 'own-students-summary'
+              ? 'You have summary access for your own class. Dosages and full protocols are visible to the school nurse and senior DSL.'
+              : 'You have summary access. Dosages and full protocols are visible to the school nurse and senior DSL.'}
+          </p>
         </Banner>
       )}
 

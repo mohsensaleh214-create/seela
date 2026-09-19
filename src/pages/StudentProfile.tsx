@@ -3,7 +3,7 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { studentName } from '@/lib/selectors';
-import { canReadCase, canSeeStudentGuidance } from '@/lib/selectors';
+import { canReadCase, canSeeStudentGuidance, medicalAccessFor, wellbeingAccessFor } from '@/lib/selectors';
 import { buildStudentTimeline } from '@/lib/timeline';
 import { PersonAvatar } from '@/components/ui/PersonAvatar';
 import { SeverityDot } from '@/components/ui/Badge';
@@ -62,8 +62,11 @@ export function StudentProfile() {
   const medicalRecords = useMemo(() => (student ? state.medicalRecords.filter((m) => m.studentId === student.id) : []), [student, state.medicalRecords]);
   const wellbeingRecords = useMemo(() => (student ? state.wellbeingRecords.filter((w) => w.studentId === student.id) : []), [student, state.wellbeingRecords]);
 
+  const medicalAccess = student ? medicalAccessFor(permissions, student, currentUser, state.dutyMode) : 'none';
+  const wellbeingAccess = student ? wellbeingAccessFor(permissions, student, currentUser, state.dutyMode) : 'none';
+
   const timelineItems = useMemo(
-    () => (student ? buildStudentTimeline(state, student, currentUser, permissions) : []),
+    () => (student ? buildStudentTimeline(state, student, currentUser, permissions, state.dutyMode) : []),
     [student, state, currentUser, permissions],
   );
 
@@ -72,8 +75,8 @@ export function StudentProfile() {
   }
 
   const tabs: TabItem[] = [{ key: 'overview', label: 'Overview' }, { key: 'timeline', label: 'Timeline' }];
-  if (permissions.medical !== 'none') tabs.push({ key: 'medical', label: 'Medical' });
-  if (permissions.wellbeing !== 'none') tabs.push({ key: 'wellbeing', label: 'Wellbeing' });
+  if (permissions.medical !== 'none') tabs.push({ key: 'medical', label: 'Medical', locked: medicalAccess === 'locked' });
+  if (permissions.wellbeing !== 'none') tabs.push({ key: 'wellbeing', label: 'Wellbeing', locked: wellbeingAccess === 'locked' });
   tabs.push({ key: 'safeguarding', label: 'Safeguarding', locked: safeguardingLocked });
   tabs.push({ key: 'documents', label: 'Documents' });
 
@@ -147,9 +150,11 @@ export function StudentProfile() {
           />
         )}
         {activeTab === 'medical' && permissions.medical !== 'none' && (
-          <MedicalTab student={student} records={medicalRecords} access={permissions.medical} />
+          <MedicalTab student={student} records={medicalRecords} access={medicalAccess} />
         )}
-        {activeTab === 'wellbeing' && permissions.wellbeing !== 'none' && <WellbeingTab student={student} records={wellbeingRecords} />}
+        {activeTab === 'wellbeing' && permissions.wellbeing !== 'none' && (
+          <WellbeingTab student={student} records={wellbeingRecords} access={wellbeingAccess} />
+        )}
         {activeTab === 'safeguarding' &&
           (safeguardingLocked ? (
             <Banner tone="locked">

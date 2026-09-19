@@ -1,15 +1,27 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { studentName } from '@/lib/selectors';
+import type { VisitCategory } from '@/lib/types';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { TextField, TextAreaField } from '@/components/ui/FormField';
+import { TextField, TextAreaField, SelectField } from '@/components/ui/FormField';
 import { StudentChip } from '@/components/ui/StudentChip';
+
+const VISIT_CATEGORIES: VisitCategory[] = [
+  'Illness',
+  'Injury',
+  'Headache',
+  'Stomach ache',
+  'Medication administration',
+  'Anxiety or emotional',
+  'Other',
+];
 
 export function LogVisitModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { state, currentUser, dispatch, logAudit } = useApp();
   const [query, setQuery] = useState('');
   const [studentId, setStudentId] = useState('');
+  const [category, setCategory] = useState<VisitCategory>('Illness');
   const [reason, setReason] = useState('');
   const [treatment, setTreatment] = useState('');
   const [timeIn, setTimeIn] = useState(new Date().toTimeString().slice(0, 5));
@@ -27,6 +39,7 @@ export function LogVisitModal({ open, onClose }: { open: boolean; onClose: () =>
   function reset() {
     setQuery('');
     setStudentId('');
+    setCategory('Illness');
     setReason('');
     setTreatment('');
     setTimeOut('');
@@ -59,6 +72,7 @@ export function LogVisitModal({ open, onClose }: { open: boolean; onClose: () =>
                 type: 'visit',
                 description: reason,
                 visitReason: reason,
+                visitCategory: category,
                 visitTreatment: treatment,
                 visitTimeIn: today.toISOString(),
                 visitTimeOut: timeOut
@@ -111,7 +125,19 @@ export function LogVisitModal({ open, onClose }: { open: boolean; onClose: () =>
             </button>
           </div>
         )}
-        <TextField label="Reason" value={reason} onChange={(e) => setReason(e.target.value)} required />
+        <SelectField
+          label="Type of visit"
+          hint="A tag, so visits can be seen as trends across the school"
+          value={category}
+          onChange={(e) => setCategory(e.target.value as VisitCategory)}
+        >
+          {VISIT_CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </SelectField>
+        <TextField label="Specific reason" hint="e.g. Twisted ankle in PE" value={reason} onChange={(e) => setReason(e.target.value)} required />
         <TextAreaField label="Treatment given" value={treatment} onChange={(e) => setTreatment(e.target.value)} rows={3} />
         <div className="grid grid-cols-2 gap-4">
           <TextField label="Time in" type="time" value={timeIn} onChange={(e) => setTimeIn(e.target.value)} />

@@ -11,7 +11,7 @@ import type {
   HomeContact,
 } from './types';
 import type { RolePermissions } from './permissions';
-import { canReadCase, sameCampus } from './selectors';
+import { canReadCase, sameCampus, medicalAccessFor, wellbeingAccessFor } from './selectors';
 
 /** Timeline entries can carry one extra, non-routable value for portal-agnostic home-contact evidencing. Never used outside the timeline/theme display layer — portal routing stays strictly `Portal`. */
 export type TimelinePortal = Portal | 'communication';
@@ -55,16 +55,12 @@ const ENTRY_LABEL: Record<Entry['type'], string> = {
   'pattern-flag': 'System flag',
 };
 
-function staffYearGroup(staff: Staff): number | null {
-  const match = staff.jobTitle.match(/Year (\d+)/);
-  return match ? Number(match[1]) : null;
-}
-
 export function buildStudentTimeline(
   source: TimelineSourceState,
   student: Student,
   currentUser: Staff,
   perm: RolePermissions,
+  dutyMode: boolean,
 ): TimelineItem[] {
   const items: TimelineItem[] = [];
 
@@ -142,7 +138,8 @@ export function buildStudentTimeline(
     }
   }
 
-  const medicalReadable = perm.medical !== 'none';
+  const medicalAccess = medicalAccessFor(perm, student, currentUser, dutyMode);
+  const medicalReadable = medicalAccess !== 'none' && medicalAccess !== 'locked';
   for (const m of source.medicalRecords.filter((r) => r.studentId === student.id)) {
     const label =
       m.type === 'visit'
@@ -167,9 +164,8 @@ export function buildStudentTimeline(
     });
   }
 
-  const wellbeingYear = staffYearGroup(currentUser);
-  const wellbeingReadable =
-    perm.wellbeing === 'full' || (perm.wellbeing === 'own-year-full' && wellbeingYear === student.yearGroup);
+  const wellbeingAccess = wellbeingAccessFor(perm, student, currentUser, dutyMode);
+  const wellbeingReadable = wellbeingAccess !== 'none' && wellbeingAccess !== 'locked';
   for (const w of source.wellbeingRecords.filter((r) => r.studentId === student.id)) {
     const label =
       w.type === 'check-in'
@@ -186,7 +182,7 @@ export function buildStudentTimeline(
       summary: w.summary + (w.mood ? ` (mood: ${w.mood})` : ''),
       authorId: w.authorId,
       at: w.createdAt,
-      restricted: !(perm.wellbeing !== 'none') || !wellbeingReadable,
+      restricted: !wellbeingReadable,
       linkTo: wellbeingReadable ? `/students/${student.id}?tab=wellbeing` : undefined,
     });
   }

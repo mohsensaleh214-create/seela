@@ -42,7 +42,7 @@ export function WellbeingOverview() {
     [state.wellbeingRecords, permissions.wellbeing, ownYear],
   );
 
-  if (permissions.wellbeing === 'none') return <LockedPortal portal="Wellbeing" />;
+  if (permissions.wellbeing !== 'own-year-full' && permissions.wellbeing !== 'full') return <LockedPortal portal="Wellbeing" />;
 
   return (
     <>

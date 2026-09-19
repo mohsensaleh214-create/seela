@@ -258,6 +258,58 @@ Three controls, all clearly marked, so a live walkthrough never touches real sta
   DSL" caution instead). It's a deterministic, rule-based synthesis, not a
   model call: a prototype of the feature's *shape* (pull every module into
   one briefing) rather than of natural-language generation.
+- **A teacher's medical and wellbeing access, made real.** Teachers had
+  `medical: 'none'` and `wellbeing: 'none'` — meaning a class teacher had no
+  way to know a student in front of them carries an EpiPen, or is on a
+  support plan, at all. That's not defensible: a teacher can't teach a class
+  safely blind to that. Fixed with one new, deliberately narrow access level
+  on each — `'own-students-summary'` (`src/lib/permissions.ts`) — scoped by
+  the same `homeroomOf`/duty-mode boundary already used for the guidance
+  line (`medicalAccessFor` / `wellbeingAccessFor` in `src/lib/selectors.ts`):
+  a condensed summary (an allergy exists and its category; whether a support
+  plan is active; the most recent mood check-in) for a teacher's own class,
+  full clinical/session detail staying with the nurse, DSL and senior DSL.
+  Outside a teacher's own class the student-profile tab shows the same
+  "locked" banner already used for safeguarding, not a silent hide — the
+  student having a class teacher who can't reach them isn't a state to hide.
+  Getting this right touched more than the label: `canReadPortalTab` (the
+  check that opens the whole-school Medical/Wellbeing *portals* — every
+  allergy, every referral, every year's pattern) had to be tightened to
+  explicitly exclude the new scoped level, otherwise "some access" would
+  have also opened the unscoped, whole-school view; each portal page's own
+  inline `permissions.medical === 'none'` guard had the same problem and
+  needed the same fix; and the AI call-prep card was quietly pulling
+  `permissions.medical !== 'none'` too, which would have leaked a locked
+  student's medical/wellbeing detail into "points to raise" even while the
+  tab right next to it correctly showed a lock. All four now route through
+  the one scoped helper. Separately, `wellbeingAccessFor` also fixes a real
+  pre-existing gap: pastoral-lead's `'own-year-full'` was declared but never
+  actually checked outside the timeline, so a pastoral lead could already
+  open any student's full wellbeing tab regardless of year.
+- **Wellbeing notes, open to log.** The brief's "open to log, tight to read"
+  rule was applied to safeguarding concerns but nowhere else. A teacher who
+  notices something wellbeing-adjacent but not concern-worthy had no way to
+  record it short of the full report-triage-review case lifecycle, which is
+  the wrong tool for "seemed quiet today." The Wellbeing tab now always
+  offers **Add a note** (a `pastoral-note` record: an observation and an
+  optional mood, nothing else) regardless of whether that teacher's own
+  access to the tab is full or summary — logging stays open even where
+  reading doesn't, the same asymmetry the brief already establishes for
+  concerns.
+- **Medical records as tags, not just prose.** Free-text allergy and visit
+  descriptions can't be aggregated into a trend — a "what kind of allergy is
+  most common" chart can't be built from a paragraph. `AllergyCategory` and
+  `VisitCategory` (`src/lib/types.ts`) are dropdown-only tags sitting
+  alongside the existing free-text fields (which stay, for the actual
+  allergen name or specific reason — a tag can't replace "penicillin"), set
+  when a record is created in `AllergiesMedication.tsx` / `LogVisitModal.tsx`.
+  This feeds a **Medical trends** section on Reporting: allergies and nurse
+  visits by category, visible to any role with medical access. A parallel
+  **Wellbeing trends** section (check-in mood distribution, active support
+  plan count) is visible to any role with wellbeing access — nurse sees the
+  medical section, pastoral-lead/DSL/senior-DSL see both, giving each
+  "super-admin" role dashboard content specific to their own area rather
+  than everyone seeing an identical, safeguarding-only Reporting page.
 
 ## What's intentionally not here
 

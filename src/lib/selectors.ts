@@ -1,5 +1,5 @@
 import type { Case, Student, Staff, Portal } from './types';
-import type { RolePermissions } from './permissions';
+import type { RolePermissions, MedicalAccess, WellbeingAccess } from './permissions';
 
 export function studentName(student: Student): string {
   return `${student.preferredName ?? student.firstName} ${student.lastName}`;
@@ -46,6 +46,45 @@ export function canSeeStudentGuidance(perm: RolePermissions, student: Student, c
   if (perm.guidanceScope === 'own-year') return student.yearGroup === yearGroupForStaff(currentUser);
   if (perm.guidanceScope === 'own-students') return (currentUser.homeroomOf ?? []).includes(student.tutorGroup);
   return false;
+}
+
+/**
+ * The medical access a member of staff actually has for THIS student — not
+ * just the role's ceiling. Nurse/senior DSL 'full' and DSL/pastoral-lead
+ * 'summary' are school-wide by design (need-to-know for those jobs spans
+ * the whole school). A teacher's 'own-students-summary' is the one level
+ * that's scoped: enough to teach the class safely, only for their class,
+ * with the same duty-mode escape hatch as guidance.
+ */
+export function medicalAccessFor(
+  perm: RolePermissions,
+  student: Student,
+  currentUser: Staff,
+  dutyMode: boolean,
+): MedicalAccess | 'locked' {
+  if (perm.medical === 'none') return 'none';
+  if (perm.medical !== 'own-students-summary') return perm.medical;
+  if (dutyMode || (currentUser.homeroomOf ?? []).includes(student.tutorGroup)) return 'own-students-summary';
+  return 'locked';
+}
+
+/** Same reasoning as medicalAccessFor, and also now enforces pastoral-lead's
+ * existing "own-year-full" for real — previously declared but not checked
+ * outside the timeline, so a pastoral lead could open any student's full
+ * wellbeing tab regardless of year group. */
+export function wellbeingAccessFor(
+  perm: RolePermissions,
+  student: Student,
+  currentUser: Staff,
+  dutyMode: boolean,
+): WellbeingAccess | 'locked' {
+  if (perm.wellbeing === 'none') return 'none';
+  if (perm.wellbeing === 'full') return 'full';
+  if (perm.wellbeing === 'own-year-full') {
+    return student.yearGroup === yearGroupForStaff(currentUser) ? 'full' : 'locked';
+  }
+  if (dutyMode || (currentUser.homeroomOf ?? []).includes(student.tutorGroup)) return 'own-students-summary';
+  return 'locked';
 }
 
 export function levelRank(level: Case['level']): number {

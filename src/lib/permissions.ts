@@ -1,8 +1,8 @@
 import type { Role } from './types';
 
 export type ScopeLevel = 'none' | 'own-students' | 'own-year' | 'own-campus' | 'all';
-export type MedicalAccess = 'none' | 'summary' | 'full';
-export type WellbeingAccess = 'none' | 'own-year-full' | 'full';
+export type MedicalAccess = 'none' | 'own-students-summary' | 'summary' | 'full';
+export type WellbeingAccess = 'none' | 'own-students-summary' | 'own-year-full' | 'full';
 export type SafeguardingAccess = 'none' | 'assigned-only' | 'own-campus' | 'all-campuses';
 export type LevelAction = 'none' | 'propose' | 'set';
 
@@ -31,11 +31,11 @@ export const PERMISSIONS: Record<Role, RolePermissions> = {
     label: 'Class teacher',
     shortLabel: 'Teacher',
     description:
-      'Can raise a concern for any student and sees plain-language guidance for their own students. No access to underlying medical, wellbeing or safeguarding records.',
+      'Can raise a concern for any student, sees plain-language guidance for their own students, and a summary of medical and wellbeing information for their own class — enough to teach them safely, not full clinical or case detail. No access to safeguarding records.',
     raiseConcern: true,
     guidanceScope: 'own-students',
-    medical: 'none',
-    wellbeing: 'none',
+    medical: 'own-students-summary',
+    wellbeing: 'own-students-summary',
     safeguarding: 'none',
     triage: false,
     levelAction: 'none',
@@ -127,10 +127,17 @@ export function perms(role: Role): RolePermissions {
   return PERMISSIONS[role];
 }
 
+/**
+ * Whole-school portal entry (the Medical/Wellbeing nav items and their
+ * school-wide lists — every allergy, every referral, every year's pattern).
+ * Deliberately stricter than "has some access": 'own-students-summary' is a
+ * per-student, own-class scope meant for the student profile tab, not an
+ * unscoped, whole-school view. A teacher gets the former, never this.
+ */
 export function canReadPortalTab(role: Role, portal: Portal): boolean {
   const p = perms(role);
-  if (portal === 'medical') return p.medical !== 'none';
-  if (portal === 'wellbeing') return p.wellbeing !== 'none';
+  if (portal === 'medical') return p.medical === 'summary' || p.medical === 'full';
+  if (portal === 'wellbeing') return p.wellbeing === 'own-year-full' || p.wellbeing === 'full';
   return p.safeguarding !== 'none';
 }
 

@@ -11,13 +11,34 @@ import { useToast } from '@/components/ui/Toast';
 
 const MUTED = '#C8C3B4';
 const LEVEL_COLOR = { monitored: '#2F7D4F', elevated: '#A66300', immediate: '#A32A2A' } as const;
+const MOOD_COLOR = { positive: '#2F7D4F', mixed: '#A66300', low: '#A32A2A' } as const;
+const MOOD_LABEL = { positive: 'Positive', mixed: 'Mixed', low: 'Low' } as const;
 
-function ChartCard({ title, sentence, children }: { title: string; sentence: string; children: React.ReactNode }) {
+function SectionHeading({ title, sentence }: { title: string; sentence: string }) {
+  return (
+    <div className="mt-2 flex flex-col gap-0.5">
+      <h2 className="text-[19px] font-semibold text-ink">{title}</h2>
+      <p className="text-[14px] text-ink-muted">{sentence}</p>
+    </div>
+  );
+}
+
+function ChartCard({
+  title,
+  sentence,
+  clickable = true,
+  children,
+}: {
+  title: string;
+  sentence: string;
+  clickable?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <Card className="p-5">
       <CardTitle>{title}</CardTitle>
       <p className="mt-1 text-[14px] text-ink-muted">{sentence}</p>
-      <p className="mt-1 text-[12px] text-ink-muted">Click a bar to see exactly which cases make it up.</p>
+      {clickable && <p className="mt-1 text-[12px] text-ink-muted">Click a bar to see exactly which cases make it up.</p>}
       <div className="mt-4">{children}</div>
     </Card>
   );
@@ -71,7 +92,7 @@ function StatTile({
 }
 
 export function Reporting() {
-  const { state } = useApp();
+  const { state, permissions } = useApp();
   const { show } = useToast();
   const navigate = useNavigate();
 
@@ -115,6 +136,42 @@ export function Reporting() {
     const withContact = eligible.filter((c) => state.contactRecords.some((r) => r.caseId === c.id && (!r.isException || r.authorisedById)));
     return (withContact.length / eligible.length) * 100;
   }, [state.cases, state.contactRecords]);
+
+  const byAllergyCategory = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const m of state.medicalRecords) {
+      if (m.type !== 'allergy') continue;
+      const key = m.allergyCategory ?? 'Other';
+      map.set(key, (map.get(key) ?? 0) + 1);
+    }
+    return Array.from(map.entries()).map(([category, count]) => ({ category, count })).sort((a, b) => b.count - a.count);
+  }, [state.medicalRecords]);
+
+  const byVisitCategory = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const m of state.medicalRecords) {
+      if (m.type !== 'visit') continue;
+      const key = m.visitCategory ?? 'Other';
+      map.set(key, (map.get(key) ?? 0) + 1);
+    }
+    return Array.from(map.entries()).map(([category, count]) => ({ category, count })).sort((a, b) => b.count - a.count);
+  }, [state.medicalRecords]);
+
+  const byMood = useMemo(() => {
+    const map = { positive: 0, mixed: 0, low: 0 };
+    for (const w of state.wellbeingRecords) {
+      if (w.mood) map[w.mood] += 1;
+    }
+    return (['positive', 'mixed', 'low'] as const).map((mood) => ({ mood, count: map[mood] }));
+  }, [state.wellbeingRecords]);
+
+  const activeSupportPlans = useMemo(
+    () => state.wellbeingRecords.filter((w) => w.type === 'support-plan' && w.planStatus === 'active').length,
+    [state.wellbeingRecords],
+  );
+
+  const showMedicalTrends = permissions.medical !== 'none';
+  const showWellbeingTrends = permissions.wellbeing !== 'none';
 
   return (
     <>
@@ -213,6 +270,77 @@ export function Reporting() {
           </ResponsiveContainer>
         </ChartCard>
       </div>
+
+      {showMedicalTrends && (
+        <>
+          <SectionHeading
+            title="Medical trends"
+            sentence="Tagged, not typed in — so allergies and visits can be read as a pattern, not one record at a time."
+          />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <ChartCard title="Allergies by type" sentence="What kind of allergy is on file most often." clickable={false}>
+              {byAllergyCategory.length === 0 ? (
+                <p className="text-[14px] text-ink-muted">No allergies recorded yet.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={byAllergyCategory} margin={{ top: 8 }}>
+                    <CartesianGrid vertical={false} stroke="#E2DFD5" />
+                    <XAxis dataKey="category" tick={{ fontSize: 12, fill: '#42423C' }} axisLine={{ stroke: '#E2DFD5' }} tickLine={false} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#6B6B61' }} axisLine={false} tickLine={false} />
+                    <Tooltip cursor={{ fill: '#F2F0E9' }} contentStyle={{ borderRadius: 8, borderColor: '#E2DFD5', fontSize: 13 }} />
+                    <Bar dataKey="count" fill="#0F766E" radius={[4, 4, 0, 0]} maxBarSize={48} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
+
+            <ChartCard title="Nurse visits by type" sentence="What's coming through the medical room this term." clickable={false}>
+              {byVisitCategory.length === 0 ? (
+                <p className="text-[14px] text-ink-muted">No visits recorded yet.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={byVisitCategory} layout="vertical" margin={{ left: 16 }}>
+                    <CartesianGrid horizontal={false} stroke="#E2DFD5" />
+                    <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12, fill: '#6B6B61' }} axisLine={{ stroke: '#E2DFD5' }} tickLine={false} />
+                    <YAxis type="category" dataKey="category" width={130} tick={{ fontSize: 12, fill: '#42423C' }} axisLine={false} tickLine={false} />
+                    <Tooltip cursor={{ fill: '#F2F0E9' }} contentStyle={{ borderRadius: 8, borderColor: '#E2DFD5', fontSize: 13 }} />
+                    <Bar dataKey="count" fill="#0F766E" radius={[0, 4, 4, 0]} maxBarSize={18} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
+          </div>
+        </>
+      )}
+
+      {showWellbeingTrends && (
+        <>
+          <SectionHeading title="Wellbeing trends" sentence="A whole-school view, not any one student's record." />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <ChartCard title="Check-in mood" sentence="Mood recorded at check-ins, across all students seen." clickable={false}>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={byMood} margin={{ top: 8 }}>
+                  <CartesianGrid vertical={false} stroke="#E2DFD5" />
+                  <XAxis dataKey="mood" tickFormatter={(m: keyof typeof MOOD_LABEL) => MOOD_LABEL[m]} tick={{ fontSize: 12, fill: '#42423C' }} axisLine={{ stroke: '#E2DFD5' }} tickLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#6B6B61' }} axisLine={false} tickLine={false} />
+                  <Tooltip cursor={{ fill: '#F2F0E9' }} contentStyle={{ borderRadius: 8, borderColor: '#E2DFD5', fontSize: 13 }} />
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={64}>
+                    {byMood.map((entry) => (
+                      <Cell key={entry.mood} fill={MOOD_COLOR[entry.mood]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <StatTile
+              title="Active support plans"
+              sentence="Students currently on a wellbeing support plan, school-wide."
+              value={String(activeSupportPlans)}
+            />
+          </div>
+        </>
+      )}
     </>
   );
 }

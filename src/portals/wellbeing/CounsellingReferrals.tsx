@@ -26,7 +26,7 @@ export function CounsellingReferrals() {
   const { state, permissions } = useApp();
   const [referring, setReferring] = useState(false);
 
-  if (permissions.wellbeing === 'none') return <LockedPortal portal="Wellbeing" />;
+  if (permissions.wellbeing !== 'own-year-full' && permissions.wellbeing !== 'full') return <LockedPortal portal="Wellbeing" />;
 
   const referrals = state.wellbeingRecords
     .filter((r) => r.type === 'session')

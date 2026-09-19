@@ -19,8 +19,18 @@ const ROLE_ORDER: Role[] = ['teacher', 'pastoral-lead', 'nurse', 'dsl', 'senior-
 const MATRIX_ROWS: { label: string; get: (r: Role) => string }[] = [
   { label: 'Raise a concern, any portal', get: () => 'Yes' },
   { label: 'See student guidance line', get: (r) => ({ all: 'All', 'own-year': 'Own year', 'own-students': 'Own students', 'own-campus': 'Own campus', none: '—' } as const)[PERMISSIONS[r].guidanceScope] },
-  { label: 'Read medical records', get: (r) => ({ none: 'No', summary: 'Summary', full: 'Full' } as const)[PERMISSIONS[r].medical] },
-  { label: 'Read wellbeing records', get: (r) => ({ none: 'No', 'own-year-full': 'Full, own year', full: 'Full' } as const)[PERMISSIONS[r].wellbeing] },
+  {
+    label: 'Read medical records',
+    get: (r) =>
+      ({ none: 'No', 'own-students-summary': 'Summary, own class', summary: 'Summary', full: 'Full' } as const)[PERMISSIONS[r].medical],
+  },
+  {
+    label: 'Read wellbeing records',
+    get: (r) =>
+      ({ none: 'No', 'own-students-summary': 'Summary, own class', 'own-year-full': 'Full, own year', full: 'Full' } as const)[
+        PERMISSIONS[r].wellbeing
+      ],
+  },
   { label: 'Read safeguarding cases', get: (r) => ({ none: 'No', 'assigned-only': 'Assigned only', 'own-campus': 'All, own campus', 'all-campuses': 'All campuses' } as const)[PERMISSIONS[r].safeguarding] },
   { label: 'Triage a report', get: (r) => (PERMISSIONS[r].triage ? 'Yes' : 'No') },
   { label: 'Set or change level', get: (r) => ({ none: 'No', propose: 'Propose', set: 'Yes' } as const)[PERMISSIONS[r].levelAction] },

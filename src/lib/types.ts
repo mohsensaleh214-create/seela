@@ -166,6 +166,11 @@ export interface HomeContact extends WithMeta {
 export type MedicalRecordType = 'condition' | 'allergy' | 'medication' | 'visit' | 'plan';
 export type Severity = 'mild' | 'moderate' | 'severe';
 
+/** Tags, not free text — so allergies can be aggregated into a trends dashboard rather than read one at a time. */
+export type AllergyCategory = 'Food' | 'Insect sting' | 'Medication' | 'Environmental' | 'Latex' | 'Other';
+/** Same reasoning for nurse visits: a tag drives the "what's coming through the medical room" dashboard. */
+export type VisitCategory = 'Illness' | 'Injury' | 'Headache' | 'Stomach ache' | 'Medication administration' | 'Anxiety or emotional' | 'Other';
+
 export interface MedicalRecord extends WithMeta {
   studentId: string;
   type: MedicalRecordType;
@@ -177,8 +182,11 @@ export interface MedicalRecord extends WithMeta {
   medicationFrequency?: string;
   medicationLocation?: string;
   reviewDate?: string;
+  // allergy-specific
+  allergyCategory?: AllergyCategory;
   // visit-specific
   visitReason?: string;
+  visitCategory?: VisitCategory;
   visitTreatment?: string;
   visitTimeIn?: string;
   visitTimeOut?: string;

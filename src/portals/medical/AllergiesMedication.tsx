@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { studentName } from '@/lib/selectors';
+import type { AllergyCategory } from '@/lib/types';
+
+const ALLERGY_CATEGORIES: AllergyCategory[] = ['Food', 'Insect sting', 'Medication', 'Environmental', 'Latex', 'Other'];
 import { PortalHeader } from '@/components/PortalHeader';
 import { PageHeader } from '@/components/PageHeader';
 import { LockedPortal } from '@/components/LockedPortal';
@@ -19,6 +22,7 @@ export function AllergiesMedication() {
   const { show } = useToast();
   const [adding, setAdding] = useState(false);
   const [studentId, setStudentId] = useState('');
+  const [category, setCategory] = useState<AllergyCategory>('Food');
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState<'mild' | 'moderate' | 'severe'>('moderate');
   const [protocol, setProtocol] = useState('');
@@ -26,7 +30,7 @@ export function AllergiesMedication() {
   const [medDose, setMedDose] = useState('');
   const [medLocation, setMedLocation] = useState('');
 
-  if (permissions.medical === 'none') return <LockedPortal portal="Medical" />;
+  if (permissions.medical !== 'summary' && permissions.medical !== 'full') return <LockedPortal portal="Medical" />;
 
   const allergies = state.medicalRecords.filter((m) => m.type === 'allergy');
   const canWrite = permissions.medical === 'full';
@@ -58,7 +62,14 @@ export function AllergiesMedication() {
                   <StudentChip student={s} linkTo={`/students/${s.id}`} />
                   <span className="text-[13px] font-medium capitalize text-urgent">{a.severity}</span>
                 </div>
-                <CardTitle className="mt-3">Emergency card — {a.description}</CardTitle>
+                <div className="mt-3 flex items-center gap-2">
+                  {a.allergyCategory && (
+                    <span className="rounded-full bg-medical-tint px-2 py-0.5 text-[12px] font-medium text-medical-deep">
+                      {a.allergyCategory}
+                    </span>
+                  )}
+                  <CardTitle>Emergency card — {a.description}</CardTitle>
+                </div>
                 {permissions.medical === 'full' ? (
                   <>
                     <p className="mt-1 text-[15px] leading-[1.55] text-ink-body">{a.protocol}</p>
@@ -98,6 +109,7 @@ export function AllergiesMedication() {
                 record: {
                   studentId,
                   type: 'allergy',
+                  allergyCategory: category,
                   severity,
                   description,
                   protocol,
@@ -115,6 +127,7 @@ export function AllergiesMedication() {
               });
               show('Allergy record saved.');
               setStudentId('');
+              setCategory('Food');
               setDescription('');
               setProtocol('');
               setMedName('');
@@ -143,7 +156,19 @@ export function AllergiesMedication() {
               ))}
             </select>
           </label>
-          <TextField label="Allergy" value={description} onChange={(e) => setDescription(e.target.value)} required />
+          <SelectField
+            label="Allergy type"
+            hint="A tag, so allergies can be seen as trends across the school, not just one record at a time"
+            value={category}
+            onChange={(e) => setCategory(e.target.value as AllergyCategory)}
+          >
+            {ALLERGY_CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </SelectField>
+          <TextField label="Specific allergen" hint="e.g. Peanuts, Penicillin, Bee stings" value={description} onChange={(e) => setDescription(e.target.value)} required />
           <SelectField label="Severity" value={severity} onChange={(e) => setSeverity(e.target.value as typeof severity)}>
             <option value="mild">Mild</option>
             <option value="moderate">Moderate</option>

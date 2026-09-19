@@ -23,7 +23,7 @@ export function HealthcarePlans() {
   const [protocol, setProtocol] = useState('');
   const [reviewDate, setReviewDate] = useState('');
 
-  if (permissions.medical === 'none') return <LockedPortal portal="Medical" />;
+  if (permissions.medical !== 'summary' && permissions.medical !== 'full') return <LockedPortal portal="Medical" />;
 
   const plans = state.medicalRecords.filter((m) => m.type === 'plan');
   const canWrite = permissions.medical === 'full';

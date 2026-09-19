@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { Mail, Phone, Users, Video, Sparkles, Inbox, Wand2, MessageCircle, AlertTriangle, History } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
-import { staffName, canReadCase, canSeeStudentGuidance } from '@/lib/selectors';
+import { staffName, canReadCase, canSeeStudentGuidance, medicalAccessFor, wellbeingAccessFor } from '@/lib/selectors';
 import { tone } from '@/lib/portal-theme';
 import { buildCallPrep } from '@/lib/callPrep';
 import type { Student, HomeContactChannel, HomeContactDirection } from '@/lib/types';
@@ -51,8 +51,13 @@ export function HomeCommunicationCard({ student }: { student: Student }) {
     });
     const hasHiddenCases = studentCases.length > readableCases.length;
 
-    const medicalRecords = permissions.medical !== 'none' ? state.medicalRecords.filter((m) => m.studentId === student.id) : [];
-    const wellbeingRecords = permissions.wellbeing !== 'none' ? state.wellbeingRecords.filter((w) => w.studentId === student.id) : [];
+    const medicalAccess = medicalAccessFor(permissions, student, currentUser, state.dutyMode);
+    const medicalRecords =
+      medicalAccess !== 'none' && medicalAccess !== 'locked' ? state.medicalRecords.filter((m) => m.studentId === student.id) : [];
+
+    const wellbeingAccess = wellbeingAccessFor(permissions, student, currentUser, state.dutyMode);
+    const wellbeingRecords =
+      wellbeingAccess !== 'none' && wellbeingAccess !== 'locked' ? state.wellbeingRecords.filter((w) => w.studentId === student.id) : [];
 
     return buildCallPrep({
       student,

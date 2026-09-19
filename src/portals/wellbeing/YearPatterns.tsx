@@ -10,7 +10,7 @@ const MOOD_COLOR: Record<string, string> = { positive: 'bg-steady', mixed: 'bg-c
 export function YearPatterns() {
   const { state, permissions } = useApp();
 
-  if (permissions.wellbeing === 'none') return <LockedPortal portal="Wellbeing" />;
+  if (permissions.wellbeing !== 'own-year-full' && permissions.wellbeing !== 'full') return <LockedPortal portal="Wellbeing" />;
 
   const byYear = useMemo(() => {
     const map = new Map<number, { positive: number; mixed: number; low: number }>();
